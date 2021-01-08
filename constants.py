@@ -8,8 +8,8 @@ class Constants:
     JOINING_REQUEST_TABLE_NAME = "JoiningRequest"
 
        
-    PERSON_ID_INDEX_NAME ="PersonId"
-    SCENTITY_ID_INDEX_NAME = "ScentityId"
+    PERSON_ID_INDEX_NAME ="EmployeeId"
+    SCENTITY_ID_INDEX_NAME = "ScentityIdentificationCode"
     JOINING_REQUESTID_INDEX_NAME = "JoiningRequestId"
 
     # JOURNAL_EXPORT_S3_BUCKET_NAME_PREFIX = "qldb-tutorial-journal-export"

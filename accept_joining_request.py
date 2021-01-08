@@ -18,7 +18,7 @@ def approve_joining_request(transaction_executor, request_id):
         # approve the request'
         logger.info(" Request exists.")
         
-        if get_value_from_documentid(transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, request_id, 'isAccepted') == "true" : 
+        if get_value_from_documentid(transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, request_id, 'isAccepted') == [1]: 
             logger.info("Request Already accepted")
             
         else:            
@@ -26,7 +26,7 @@ def approve_joining_request(transaction_executor, request_id):
             transaction_executor.execute_statement(update_statement, request_id)
             
             person_id = get_value_from_documentid(transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, request_id, 'SenderPersonId')
-            scentity_id_code = get_value_from_documentid(transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, request_id, 'ScentityIdentificationCode')
+            scentity_id_code = get_value_from_documentid(transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, request_id, 'ScEntityIdentificationCode')
             
             join_person_to_company(transaction_executor, scentity_id_code, person_id)
             logger.info("Request : {} Accepted".format(request_id))
@@ -38,7 +38,7 @@ def approve_joining_request(transaction_executor, request_id):
      
 def join_person_to_company(transaction_executor, scentity_id_code, person_id):
         
-    statement = 'FROM SCEntities AS s WHERE s.ScentityIdentificationCode = ? INSERT INTO s.PersonIds VALUE ?'
+    statement = 'FROM SCEntities AS s WHERE s.ScEntityIdentificationCode = ? INSERT INTO s.PersonIds VALUE ?'
     cursor_two = transaction_executor.execute_statement(statement, scentity_id_code, person_id)
     
     try:
@@ -56,11 +56,8 @@ def get_value_from_documentid(transaction_executor, table_name, document_id, fie
     query = "SELECT t.{} FROM {} as t BY d_id WHERE d_id = ?".format(field, table_name)
     cursor_three = transaction_executor.execute_statement(query, document_id)
     
-    # print_result(cursor_thre
-    for row in cursor_three:
-        # Each row would be in Ion format.
-        value = dumps(row[field], binary=False, indent='  ', omit_version_marker=True)
-    
+    value = list(map(lambda x: x.get(field), cursor_three))
+
     logger.info("value of {} in {} is : {} ".format(field, document_id, value))
         
     return value
@@ -99,7 +96,7 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            request_id = "EVaGfpIkR5h3ZnlcTmqcvY"        
+            request_id = "65vrXPWIXMqClbnei3PV8D"        
   
             driver.execute_lambda(lambda executor: approve_joining_request(executor,request_id))
     except Exception:

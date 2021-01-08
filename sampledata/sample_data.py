@@ -55,8 +55,11 @@ class SampleData:
     
     SCENTITY = [
             {
-            "ScentityIdentificationCode" : "JXkY1234",    
-            "ScentityIdentificationCodeType" : "BusinessNumber",
+            "ScEntityName" : " Pfizer",
+            "ScEntityLocation" : "123 ABC St, Texas, USA",
+            "ScEntityContact": "1234567890",
+            "ScEntityIdentificationCode" : "JXkY1234",    
+            "ScEntityIdentificationCodeType" : "BusinessNumber",
             "isApprovedByAdmin": False,
             "ScentityTypeCode": 2,
             "PersonIds": [],

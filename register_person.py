@@ -54,7 +54,7 @@ def get_person_ids(transaction_executor):
     statement = 'SELECT PersonIds FROM SCEntities'
     cursor2 = transaction_executor.execute_statement(statement)
     person_ids = list(map(lambda x: x.get('PersonIds'), cursor2))
-    logger.info("Person Ids are: {}".format(person_ids))
+    logger.info("Existing Person Ids are: {}".format(person_ids))
     return person_ids
 
 def lookup_scentity_for_person(transaction_executor, person_id):
@@ -111,8 +111,8 @@ def register_new_Person(transaction_executor, person):
 def lookup_scentity(transaction_executor, new_sc_entity):
     
     
-    scentity_id = new_sc_entity['ScentityIdentificationCode'];
-    query = 'SELECT * FROM SCEntities AS d WHERE d.ScentityIdentificationCode = ?'
+    scentity_id = new_sc_entity['ScEntityIdentificationCode'];
+    query = 'SELECT * FROM SCEntities AS d WHERE d.ScEntityIdentificationCode = ?'
     cursor = transaction_executor.execute_statement(query, scentity_id)
     try:
         next(cursor)
@@ -128,7 +128,7 @@ def create_req_to_join_scentity(transaction_executor, sc_entity, employee_id, pe
     request = {
         "SenderEmployeeId": employee_id,
         "SenderPersonId" : person_id,
-        "ScentityIdentificationCode": sc_entity['ScentityIdentificationCode'],
+        "ScEntityIdentificationCode": sc_entity['ScEntityIdentificationCode'],
         "isAccepted":False
     }
     
@@ -138,11 +138,11 @@ def create_req_to_join_scentity(transaction_executor, sc_entity, employee_id, pe
     
 def calculateTotalRequests(transaction_executor, sc_entity):
     
-    sc_entity_id_code = sc_entity['ScentityIdentificationCode']
+    sc_entity_id_code = sc_entity['ScEntityIdentificationCode']
         
     logger.info("Calculating total requests")
     
-    query_one = 'SELECT SIZE(JoiningRequests) as RequestNumbers FROM SCEntities AS s WHERE s.ScentityIdentificationCode = ?'
+    query_one = 'SELECT SIZE(JoiningRequests) as RequestNumbers FROM SCEntities AS s WHERE s.ScEntityIdentificationCode = ?'
     cursor_one= transaction_executor.execute_statement(query_one,sc_entity_id_code)
     
     
@@ -156,11 +156,11 @@ def calculateTotalRequests(transaction_executor, sc_entity):
 def send_request_to_company(transaction_executor, request_Id, sc_entity):
     
     
-    sc_entity_id_code = sc_entity['ScentityIdentificationCode']
+    sc_entity_id_code = sc_entity['ScEntityIdentificationCode']
     
     logger.info('Sending request to the company Admin.')
     
-    statement = 'FROM SCEntities AS s WHERE s.ScentityIdentificationCode = ? INSERT INTO s.JoiningRequests VALUE ?'
+    statement = 'FROM SCEntities AS s WHERE s.ScEntityIdentificationCode = ? INSERT INTO s.JoiningRequests VALUE ?'
     cursor_two = transaction_executor.execute_statement(statement, sc_entity_id_code, request_Id)
     
     try:
@@ -183,7 +183,16 @@ def req_already_sent(transaction_executor, person_id):
     except StopIteration:
         logger.info(" Request not found")
         return False
+
+def update_person_to_admin(transaction_executor,person_id):
     
+    update_statement = " UPDATE Persons AS p BY id SET p.isAdmin = true WHERE id = ?"
+    cursor = transaction_executor.execute_statement(update_statement, person_id)
+    try:
+        next(cursor)
+        logger.info("Person with person id :{} was made an admin.".format(person_id))
+    except:
+        logger.info("Problem arised while making person with person id :{} as admin.".format(person_id))
 
 def register_new_user_with_scentity(transaction_executor, person, new_sc_entity):
     """
@@ -213,23 +222,21 @@ def register_new_user_with_scentity(transaction_executor, person, new_sc_entity)
             
         else:
             #create a new entity
-            new_sc_entity.update({'PersonIds': str(person_id)})
-            person.update({'isAdmin': True })
-            
-            
-            # statement = 'INSERT INTO SCEntities ?'
-            # transaction_executor.execute_statement(statement, convert_object_to_ion(new_sc_entity))
-            # cursor_three = lookup_scentity_for_person(transaction_executor, person_id)
-            try:
-                result = insert_documents( transaction_executor, Constants.SCENTITY_TABLE_NAME, [new_sc_entity])
-                sc_entity_id = result[0];
-                sc_entity_id_code = new_sc_entity["ScentityIdentificationCode"]
-                logger.info('Successfully registered new SCEntity with ScentityIdentificationCode : {} and ScEntityId: {}.'.format(sc_entity_id_code,sc_entity_id))
-                return
-            except StopIteration:
-                logger.info('Problem occurred while inserting Scentity, please review the results.')
-                return
-            
+            if req_already_sent(transaction_executor, person_id) == True :
+                logger.info("Please wait for your company admin to approve the request.")
+            else:
+                update_person_to_admin(transaction_executor,person_id)
+                new_sc_entity.update({'PersonIds': str(person_id)})
+                try:
+                    result = insert_documents( transaction_executor, Constants.SCENTITY_TABLE_NAME, [new_sc_entity])
+                    sc_entity_id = result[0];
+                    sc_entity_id_code = new_sc_entity["ScEntityIdentificationCode"]
+                    logger.info('Successfully registered new SCEntity with ScEntityIdentificationCode : {} and ScEntityId: {}.'.format(sc_entity_id_code,sc_entity_id))
+                    return
+                except StopIteration:
+                    logger.info('Problem occurred while inserting Scentity, please review the results.')
+                    return
+                
 
 if __name__ == '__main__':
     """
@@ -238,26 +245,53 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
+            # new_person = {
+            # 'EmployeeId': 'BOB123',
+            # 'FirstName': 'Bob',
+            # 'LastName': 'Doe',
+            # 'isSuperAdmin' : False,
+            # 'isAdmin' : False,
+            #  'PersonContact': {
+            #     "Email": "Bob.Doe@ubc.ca",
+            #     'Phone' : "8888888888",
+            #     'Address': 'FirstNewUser'
+            #  }}
+
             new_person = {
-            'EmployeeId': 'JANE123',
-            'FirstName': 'Jan',
-            'LastName': 'Doe',
+            'EmployeeId': 'JAN123',
+            'FirstName': 'JANE',
+            'LastName': 'DOE',
             'isSuperAdmin' : False,
             'isAdmin' : False,
              'PersonContact': {
-                "Email": "Bob.Doe@ubc.ca",
+                "Email": "JAN.Doe@ubc.ca",
                 'Phone' : "8888888888",
                 'Address': 'FirstNewUser'
              }}
+    
   
-  
+            # new_sc_entity = {
+            # "ScEntityName" : " Moderna",
+            # "ScEntityLocation" : "345 DEF St, ON, CAN",
+            # "ScEntityContact": "1234567890",
+            # "isApprovedByAdmin": False,
+            # "ScentityTypeCode": 2,
+            # "PersonIds": [],
+            # "JoiningRequests" : [],
+            # "ScEntityIdentificationCode" : "ABCD1234",    
+            # "ScEntityIdentificationCodeType" : "BusinessNumber"               
+            # }
+
             new_sc_entity = {
+            "ScEntityName" : " CompanyB",
+            "ScEntityLocation" : "abad,asdasd,asdad",
+            "ScEntityContact": "1234567890",
             "isApprovedByAdmin": False,
             "ScentityTypeCode": 2,
             "PersonIds": [],
             "JoiningRequests" : [],
-            "ScentityIdentificationCode" : "JXkY1234",    
-            "ScentityIdentificationCodeType" : "BusinessNumber"               
+            "ScEntityIdentificationCode" : "ASDSD1234",    
+            "ScEntityIdentificationCodeType" : "BusinessNumber"               
             }
 
             driver.execute_lambda(lambda executor: register_new_user_with_scentity(executor, new_person, new_sc_entity))
