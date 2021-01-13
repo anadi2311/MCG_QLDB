@@ -60,7 +60,7 @@ class SampleData:
             "ScEntityContact": "1234567890",
             "ScEntityIdentificationCode" : "JXkY1234",    
             "ScEntityIdentificationCodeType" : "BusinessNumber",
-            "isApprovedByAdmin": False,
+            "isApprovedBySuperAdmin": False,
             "ScentityTypeCode": 2,
             "PersonIds": [],
             "JoiningRequests" : [],
@@ -126,6 +126,16 @@ def get_document_ids_from_dml_results(result):
     ret_val = list(map(lambda x: x.get('documentId'), result))
     return ret_val
 
+def get_value_from_documentid(transaction_executor, table_name, document_id, field):
+    
+    query = "SELECT t.{} FROM {} as t BY d_id WHERE d_id = ?".format(field, table_name)
+    cursor_three = transaction_executor.execute_statement(query, document_id)
+    
+    value = list(map(lambda x: x.get(field), cursor_three))
+
+    logger.info("value of {} in {} is : {} ".format(field, document_id, value))
+        
+    return value
 
 def print_result(cursor):
     """

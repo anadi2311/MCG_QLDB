@@ -55,7 +55,13 @@ if __name__ == '__main__':
                                         and create_index(x, Constants.SCENTITY_TABLE_NAME,
                                                     Constants.SCENTITY_ID_INDEX_NAME)
                                         and create_index(x,Constants.JOINING_REQUEST_TABLE_NAME,
-                                                    Constants.JOINING_REQUESTID_INDEX_NAME),
+                                                    Constants.JOINING_REQUESTID_INDEX_NAME)
+                                        and create_index(x, Constants.SUPERADMIN_REQUEST_TABLE_NAME,
+                                                    Constants.SUPERADMIN_REQUEST_INDEX_NAME)
+                                        # and create_index(x,Constants.SUPERADMIN_PRODUCTREQUEST_TABLE_NAME,
+                                        #             Constants.SUPERADMIN_PRODUCTREQUEST_INDEX_NAME)
+                                        and create_index(x, Constants.PRODUCT_TABLE_NAME, 
+                                                    Constants.PRODUCT_ID_INDEX_NAME),
                                   lambda retry_attempt: logger.info('Retrying due to OCC conflict...'))
             logger.info('Indexes created successfully.')
     except Exception:

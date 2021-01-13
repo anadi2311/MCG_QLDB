@@ -32,7 +32,10 @@ if __name__ == '__main__':
         with create_qldb_driver() as qldb_driver:
             qldb_driver.execute_lambda(lambda x: create_table(x, Constants.SCENTITY_TABLE_NAME) and
                                    create_table(x, Constants.PERSON_TABLE_NAME) and
-                                   create_table(x, Constants.JOINING_REQUEST_TABLE_NAME),
+                                   create_table(x, Constants.JOINING_REQUEST_TABLE_NAME) and
+                                   create_table(x,Constants.SUPERADMIN_REQUEST_TABLE_NAME) and
+                                #    create_table(x, Constants.SUPERADMIN_PRODUCTREQUEST_TABLE_NAME) and
+                                   create_table(x,Constants.PRODUCT_TABLE_NAME),
                                    lambda retry_attempt: logger.info('Retrying due to OCC conflict...'))
             logger.info('Tables created successfully.')
     except Exception:

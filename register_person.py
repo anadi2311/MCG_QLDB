@@ -54,8 +54,16 @@ def get_person_ids(transaction_executor):
     statement = 'SELECT PersonIds FROM SCEntities'
     cursor2 = transaction_executor.execute_statement(statement)
     person_ids = list(map(lambda x: x.get('PersonIds'), cursor2))
-    logger.info("Existing Person Ids are: {}".format(person_ids))
+    logger.info("Existing Person Ids are: {} ".format(person_ids))
     return person_ids
+
+def get_scentity_ids(transaction_executor):
+    
+    statement = 'SELECT id FROM SCEntities by id'
+    cursor2 = transaction_executor.execute_statement(statement)
+    scentity_ids = list(map(lambda x: x.get('id'), cursor2))
+    logger.info("Existing scentity ids are {}".format(scentity_ids))
+    return scentity_ids
 
 def lookup_scentity_for_person(transaction_executor, person_id):
     """
@@ -73,6 +81,20 @@ def lookup_scentity_for_person(transaction_executor, person_id):
     cursor = transaction_executor.execute_statement(query, person_id, person_ids)
     return cursor
 
+def get_scentityid_from_personid(transaction_executor, person_id):
+
+    values = get_person_ids(transaction_executor)
+    keys = get_scentity_ids(transaction_executor)
+    id_dict = dict(zip(keys,values))
+    
+    for key, values in id_dict.items():
+        if person_id in values:
+            return key
+        else:
+            logger.info("Person does not belong to any entity")
+            return False
+
+
 def person_belong_to_scentity(transaction_executor, person_id):
     """
     Check if the driver already has a driver's license using their unique document ID.
@@ -86,6 +108,7 @@ def person_belong_to_scentity(transaction_executor, person_id):
     cursor = lookup_scentity_for_person(transaction_executor, person_id)
     try:
         next(cursor)
+        print_result(cursor)
         return True
     except StopIteration:
         return False
@@ -109,9 +132,7 @@ def register_new_Person(transaction_executor, person):
         
 
 def lookup_scentity(transaction_executor, new_sc_entity):
-    
-    
-    scentity_id = new_sc_entity['ScEntityIdentificationCode'];
+    scentity_id = new_sc_entity['ScEntityIdentificationCode']
     query = 'SELECT * FROM SCEntities AS d WHERE d.ScEntityIdentificationCode = ?'
     cursor = transaction_executor.execute_statement(query, scentity_id)
     try:
@@ -270,29 +291,29 @@ if __name__ == '__main__':
              }}
     
   
-            # new_sc_entity = {
-            # "ScEntityName" : " Moderna",
-            # "ScEntityLocation" : "345 DEF St, ON, CAN",
-            # "ScEntityContact": "1234567890",
-            # "isApprovedByAdmin": False,
-            # "ScentityTypeCode": 2,
-            # "PersonIds": [],
-            # "JoiningRequests" : [],
-            # "ScEntityIdentificationCode" : "ABCD1234",    
-            # "ScEntityIdentificationCodeType" : "BusinessNumber"               
-            # }
-
             new_sc_entity = {
-            "ScEntityName" : " CompanyB",
-            "ScEntityLocation" : "abad,asdasd,asdad",
+            "ScEntityName" : " Moderna",
+            "ScEntityLocation" : "345 DEF St, ON, CAN",
             "ScEntityContact": "1234567890",
-            "isApprovedByAdmin": False,
+            "isApprovedBySuperAdmin": False,
             "ScentityTypeCode": 2,
             "PersonIds": [],
             "JoiningRequests" : [],
-            "ScEntityIdentificationCode" : "ASDSD1234",    
+            "ScEntityIdentificationCode" : "ABCD1234",    
             "ScEntityIdentificationCodeType" : "BusinessNumber"               
             }
+
+            # new_sc_entity = {
+            # "ScEntityName" : " CompanyB",
+            # "ScEntityLocation" : "abad,asdasd,asdad",
+            # "ScEntityContact": "1234567890",
+            # "isApprovedBySuperAdmin": False,
+            # "ScentityTypeCode": 2,
+            # "PersonIds": [],
+            # "JoiningRequests" : [],
+            # "ScEntityIdentificationCode" : "ASDSD1234",    
+            # "ScEntityIdentificationCodeType" : "BusinessNumber"               
+            # }
 
             driver.execute_lambda(lambda executor: register_new_user_with_scentity(executor, new_person, new_sc_entity))
     except Exception:

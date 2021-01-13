@@ -1,7 +1,7 @@
 from logging import basicConfig, getLogger, INFO
 from datetime import datetime
 from connect_to_ledger import create_qldb_driver
-from sampledata.sample_data import get_document_ids, print_result
+from sampledata.sample_data import get_document_ids, print_result, get_value_from_documentid
 from amazon.ion.simpleion import dumps, loads
 from constants import Constants
 
@@ -47,23 +47,6 @@ def join_person_to_company(transaction_executor, scentity_id_code, person_id):
     except:
         logger.info("Person can't join.")
     
-    
-    
-
-
-def get_value_from_documentid(transaction_executor, table_name, document_id, field):
-    
-    query = "SELECT t.{} FROM {} as t BY d_id WHERE d_id = ?".format(field, table_name)
-    cursor_three = transaction_executor.execute_statement(query, document_id)
-    
-    value = list(map(lambda x: x.get(field), cursor_three))
-
-    logger.info("value of {} in {} is : {} ".format(field, document_id, value))
-        
-    return value
-
-
-
 def request_exists(transaction_executor, request_id):
     
     statement = " SELECT * FROM JoiningRequest as j BY j_id WHERE j_id = ?"
