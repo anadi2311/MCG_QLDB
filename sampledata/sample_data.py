@@ -132,10 +132,17 @@ def get_value_from_documentid(transaction_executor, table_name, document_id, fie
     cursor_three = transaction_executor.execute_statement(query, document_id)
     
     value = list(map(lambda x: x.get(field), cursor_three))
-
     logger.info("value of {} in {} is : {} ".format(field, document_id, value))
-        
     return value
+
+def delete_document(transaction_executor, table_name, document_id):
+    query = 'DELETE FROM {} as t BY id  WHERE id IN ?'.format(table_name)
+    cursor = transaction_executor.execute_statement(query, document_id)
+    try:
+        next(cursor)
+        logger.info( 'Successfully deleted')
+    except:
+        logger.info('Problem in deletion!')
 
 def print_result(cursor):
     """

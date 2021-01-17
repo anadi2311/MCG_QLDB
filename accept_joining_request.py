@@ -1,7 +1,7 @@
 from logging import basicConfig, getLogger, INFO
 from datetime import datetime
 from connect_to_ledger import create_qldb_driver
-from sampledata.sample_data import get_document_ids, print_result, get_value_from_documentid
+from sampledata.sample_data import get_document_ids, print_result, get_value_from_documentid, delete_document
 from amazon.ion.simpleion import dumps, loads
 from constants import Constants
 
@@ -26,8 +26,9 @@ def approve_joining_request(transaction_executor, request_id):
             transaction_executor.execute_statement(update_statement, request_id)
             
             person_id = get_value_from_documentid(transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, request_id, 'SenderPersonId')
+            person_id = person_id[0]
             scentity_id_code = get_value_from_documentid(transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, request_id, 'ScEntityIdentificationCode')
-            
+            scentity_id_code = scentity_id_code[0]
             join_person_to_company(transaction_executor, scentity_id_code, person_id)
             logger.info("Request : {} Accepted".format(request_id))
         
@@ -42,7 +43,7 @@ def join_person_to_company(transaction_executor, scentity_id_code, person_id):
     cursor_two = transaction_executor.execute_statement(statement, scentity_id_code, person_id)
     
     try:
-        cursor_two
+        next(cursor_two)
         logger.info("Person Joined to the SCentity")
     except:
         logger.info("Person can't join.")
@@ -58,28 +59,14 @@ def request_exists(transaction_executor, request_id):
     except:
         logger.info(" Request with request id: {} does not exist.".format(request_id))
         return False    
-        
 
-# def request_accepted(transaction_executor, request_id):
-    
-#     statement = " SELECT j.isAccepted FROM JoiningRequest as j BY j_id WHERE j_id = ?"
-#     cursor_five = transaction_executor.execute_statement(statement, request_id)
-    
-    
-#     for row in cursor_five:
-#         isAccepted = dumps(row, binary=False, indent='  ', omit_version_marker=True)
-    
-#     logger.info(isAccepted)
 
 
 if __name__ == '__main__':
-    """
-    Register a new driver's license.
-    """
     try:
         with create_qldb_driver() as driver:
             
-            request_id = "65vrXPWIXMqClbnei3PV8D"        
+            request_id = "FS8XPw9My1q4abki5uTMV6"        
   
             driver.execute_lambda(lambda executor: approve_joining_request(executor,request_id))
     except Exception:

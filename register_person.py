@@ -43,7 +43,8 @@ def person_already_exists(transaction_executor, employee_id):
     cursor = transaction_executor.execute_statement(query, convert_object_to_ion(employee_id))
     try:
         next(cursor)
-        logger.info("Person already exists.")
+        # person_id = list(map(lambda x: x.get('id'), cursor))
+        # logger.info("Person with id : {} already exists.".format(person_id))
         return True
     except StopIteration:
         logger.info("Person not found.")
@@ -65,21 +66,27 @@ def get_scentity_ids(transaction_executor):
     logger.info("Existing scentity ids are {}".format(scentity_ids))
     return scentity_ids
 
-def lookup_scentity_for_person(transaction_executor, person_id):
-    """
-    Query drivers license table by person ID.
-    :type transaction_executor: :py:class:`pyqldb.execution.executor.Executor`
-    :param transaction_executor: An Executor object allowing for execution of statements within a transaction.
-    :type person_id: str
-    :param person_id: The person ID to check.
-    :rtype: :py:class:`pyqldb.cursor.stream_cursor.StreamCursor`
-    :return: Cursor on the result set of a statement query.
-    """
+# def lookup_scentity_for_person(transaction_executor, person_id):
+#     """
+#     Query drivers license table by person ID.
+#     :type transaction_executor: :py:class:`pyqldb.execution.executor.Executor`
+#     :param transaction_executor: An Executor object allowing for execution of statements within a transaction.
+#     :type person_id: str
+#     :param person_id: The person ID to check.
+#     :rtype: :py:class:`pyqldb.cursor.stream_cursor.StreamCursor`
+#     :return: Cursor on the result set of a statement query.
+#     """
     
-    person_ids = get_person_ids(transaction_executor)
-    query = 'SELECT * FROM SCEntities AS d WHERE ? IN ? '
-    cursor = transaction_executor.execute_statement(query, person_id, person_ids)
-    return cursor
+#     person_ids = get_person_ids(transaction_executor)
+#     if person_id in person_ids:
+#         logger.info('{} in {}'.format(person_id, person_ids))
+#         logger.info("look up true!")
+#         return True
+#     else:
+#         logger.info('{} in {}'.format(person_id, person_ids))
+#         logger.info("lookup false!")
+#         return False
+
 
 def get_scentityid_from_personid(transaction_executor, person_id):
 
@@ -95,23 +102,23 @@ def get_scentityid_from_personid(transaction_executor, person_id):
             return False
 
 
-def person_belong_to_scentity(transaction_executor, person_id):
-    """
-    Check if the driver already has a driver's license using their unique document ID.
-    :type transaction_executor: :py:class:`pyqldb.execution.executor.Executor`
-    :param transaction_executor: An Executor object allowing for execution of statements within a transaction.
-    :type document_id: str
-    :param document_id: The document ID to check.
-    :rtype: bool
-    :return: If the Person has a drivers license.
-    """
-    cursor = lookup_scentity_for_person(transaction_executor, person_id)
-    try:
-        next(cursor)
-        print_result(cursor)
-        return True
-    except StopIteration:
-        return False
+# def person_belong_to_scentity(transaction_executor, person_id):
+#     """
+#     Check if the driver already has a driver's license using their unique document ID.
+#     :type transaction_executor: :py:class:`pyqldb.execution.executor.Executor`
+#     :param transaction_executor: An Executor object allowing for execution of statements within a transaction.
+#     :type document_id: str
+#     :param document_id: The document ID to check.
+#     :rtype: bool
+#     :return: If the Person has a drivers license.
+#     """
+#     cursor = lookup_scentity_for_person(transaction_executor, person_id)
+#     try:
+#         next(cursor)
+#         print_result(cursor)
+#         return True
+#     except StopIteration:
+#         return False
 
 def register_new_Person(transaction_executor, person):
     """
@@ -128,6 +135,7 @@ def register_new_Person(transaction_executor, person):
     else:
         result = insert_documents(transaction_executor, Constants.PERSON_TABLE_NAME, [person])
         result = result[0]
+        logger.info("New Person registered with person id : {}".format(result))
     return result
         
 
@@ -154,7 +162,7 @@ def create_req_to_join_scentity(transaction_executor, sc_entity, employee_id, pe
     }
     
     result = insert_documents( transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, [request])
-    return result[0];
+    return result[0]
     
     
 def calculateTotalRequests(transaction_executor, sc_entity):
@@ -215,6 +223,55 @@ def update_person_to_admin(transaction_executor,person_id):
     except:
         logger.info("Problem arised while making person with person id :{} as admin.".format(person_id))
 
+
+def mcg_request_already_sent(transaction_executor, document_id):
+    query = 'SELECT * FROM {} as m WHERE m.Document_id = ? '.format(Constants.SUPERADMIN_REQUEST_TABLE_NAME)
+    cursor = transaction_executor.execute_statement(query, document_id)
+
+    try:
+        next(cursor)
+        logger.info('Request to Super Admin already sent for document id : {}. Please wait for approval'.format(document_id))
+        return True
+    except StopIteration:
+        logger.info('request for new document id!')
+        return False
+
+def create_mcg_request(transaction_executor,document_id,person_id, request_type):
+    request = {
+        "Document_id": document_id,
+        "Request_type": request_type,
+        "SenderPersonId" : person_id,
+        "isAccepted":False
+    }
+
+    # request type is 1 for company 2 for product
+    if mcg_request_already_sent(transaction_executor, document_id):
+        logger.info("Request already sent for document id : {}".format(document_id))
+    else:
+        result = insert_documents(transaction_executor, Constants.SUPERADMIN_REQUEST_TABLE_NAME, [request])
+        request_id = result[0]
+        return request_id
+
+def get_approval_status(transaction_executor, scentity_id):
+    
+    statement = 'SELECT s.isApprovedBySuperAdmin FROM SCEntities as s by id where id = ?'
+    cursor = transaction_executor.execute_statement(statement, scentity_id)
+    approval_status = list(map(lambda x: x.get('isApprovedBySuperAdmin'), cursor))
+    
+    logger.info("approval status : {}".format(approval_status))
+
+    if approval_status == [0]:
+        logger.info(" not approved")
+        return False
+    else:
+        logger.info("approved")
+        return True
+
+
+## check if request is sent to super admin for approval of product code for that GTIN
+## send request for vaccineApproval
+
+
 def register_new_user_with_scentity(transaction_executor, person, new_sc_entity):
     """
     Register a new driver and a new driver's license in a single transaction.
@@ -225,8 +282,8 @@ def register_new_user_with_scentity(transaction_executor, person, new_sc_entity)
     :type new_license: dict
     :param new_license: The driver's license to register.
     """
-    person_id = register_new_Person(transaction_executor, person);
-    if person_belong_to_scentity(transaction_executor, person_id):
+    person_id = register_new_Person(transaction_executor, person)
+    if get_scentityid_from_personid(transaction_executor, person_id):
         logger.info("Person with personId '{}' already belongs to a SC Entity".format(person_id))
     else:
         logger.info("Registering new driver's entity...")
@@ -234,29 +291,35 @@ def register_new_user_with_scentity(transaction_executor, person, new_sc_entity)
             # send request to join a new entity
             logger.info(' Entity already exist. Sending request to join it.')
             employee_id = person['EmployeeId']
-            
-            if req_already_sent(transaction_executor, person_id) == True :
-                logger.info("Please wait for your company admin to approve the request.")
+            scentity_id_code = new_sc_entity['ScEntityIdentificationCode']
+            scentity_id = next(get_document_ids(transaction_executor,Constants.SCENTITY_TABLE_NAME,'ScEntityIdentificationCode',scentity_id_code))
+
+            if get_approval_status(transaction_executor,scentity_id):
+                if req_already_sent(transaction_executor, person_id) == True :
+                    logger.info("Please wait for your company admin to approve the request.")
+                else:
+                    request_Id = create_req_to_join_scentity(transaction_executor,new_sc_entity,employee_id,person_id)
+                    send_request_to_company(transaction_executor,request_Id, new_sc_entity)
             else:
-                request_Id = create_req_to_join_scentity(transaction_executor,new_sc_entity,employee_id,person_id)
-                send_request_to_company(transaction_executor,request_Id, new_sc_entity)
-            
+                logger.info('Wait for MCG to approve this entity ... ')
         else:
             #create a new entity
             if req_already_sent(transaction_executor, person_id) == True :
                 logger.info("Please wait for your company admin to approve the request.")
             else:
                 update_person_to_admin(transaction_executor,person_id)
-                new_sc_entity.update({'PersonIds': str(person_id)})
+                new_sc_entity.update({'PersonIds': [str(person_id)]})
                 try:
                     result = insert_documents( transaction_executor, Constants.SCENTITY_TABLE_NAME, [new_sc_entity])
-                    sc_entity_id = result[0];
+                    sc_entity_id = result[0]
+
+                    mcg_request_id = create_mcg_request(transaction_executor,sc_entity_id,person_id, 1)
+
                     sc_entity_id_code = new_sc_entity["ScEntityIdentificationCode"]
-                    logger.info('Successfully registered new SCEntity with ScEntityIdentificationCode : {} and ScEntityId: {}.'.format(sc_entity_id_code,sc_entity_id))
-                    return
+                    logger.info('Registration process began for new SCEntity with ScEntityIdentificationCode : {} and ScEntityId: {}. A new request was create for super admin : {}'.format(sc_entity_id_code,sc_entity_id, mcg_request_id))
+                    return mcg_request_id,sc_entity_id
                 except StopIteration:
                     logger.info('Problem occurred while inserting Scentity, please review the results.')
-                    return
                 
 
 if __name__ == '__main__':
@@ -279,8 +342,8 @@ if __name__ == '__main__':
             #  }}
 
             new_person = {
-            'EmployeeId': 'JAN123',
-            'FirstName': 'JANE',
+            'EmployeeId': 'N123',
+            'FirstName': 'CHAN',
             'LastName': 'DOE',
             'isSuperAdmin' : False,
             'isAdmin' : False,
@@ -299,7 +362,7 @@ if __name__ == '__main__':
             "ScentityTypeCode": 2,
             "PersonIds": [],
             "JoiningRequests" : [],
-            "ScEntityIdentificationCode" : "ABCD1234",    
+            "ScEntityIdentificationCode" : "LMOP1234",    
             "ScEntityIdentificationCodeType" : "BusinessNumber"               
             }
 

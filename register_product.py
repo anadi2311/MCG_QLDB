@@ -8,23 +8,12 @@ from constants import Constants
 
 from sampledata.sample_data import convert_object_to_ion
 from insert_document import insert_documents
-from register_person import get_scentityid_from_personid, person_belong_to_scentity
+from register_person import get_scentityid_from_personid, get_scentityid_from_personid, create_mcg_request, get_approval_status
 
 logger = getLogger(__name__)
 basicConfig(level=INFO)
 
-def get_approval_status(transaction_executor, scentity_id):
-    
-    statement = 'SELECT s.isApprovedBySuperAdmin FROM SCEntities as s by id where id = ?'
-    cursor = transaction_executor.execute_statement(statement, scentity_id)
-    approval_status = list(map(lambda x: x.get('isApprovedBySuperAdmin'), cursor))
-    
-    logger.info("approval status : {}".format(approval_status))
 
-    if approval_status == 0:
-        return False
-    else:
-        return True
     # logger.info('Entity with id : {} is not approved by')
     ## in case of vaccine it is GTIN Containing NDC_Code
 
@@ -40,34 +29,18 @@ def product_exist(transaction_executor, product_code):
         return False
 
 
-def create_product_request(transaction_executor,product_id,person_id):
-    request = {
-        "Document_id": product_id,
-        "Request_type": "Product",
-        "SenderPersonId" : person_id,
-        "isAccepted":False
-    }
-    
-    result = insert_documents(transaction_executor, Constants.SUPERADMIN_REQUEST_TABLE_NAME, [request])
-    product_request_id = result[0]
-    return product_request_id
-
-
-
-## check if request is sent to super admin for approval of product code for that GTIN
-## send request for vaccineApproval
 
 def register_product(transaction_executor, product,person_id):
     ## check if the vaccine with GTIN already exist 
     # scentity_id = get_scentityid_from_personid(transaction_executor,person_id)
 
-    
-    if person_belong_to_scentity(transaction_executor,person_id):
+    logger.info("Person_id: {}".format(person_id))
+    if get_scentityid_from_personid(transaction_executor,person_id):
         scentity_id = product['manufacturer_id']
         actual_scentity_id = get_scentityid_from_personid(transaction_executor,person_id)
         if actual_scentity_id == scentity_id:
-            logger.info("Matched!")
-            if get_approval_status(transaction_executor,scentity_id) == True:
+            logger.info("Matched for authorization!")
+            if get_approval_status(transaction_executor,scentity_id):
                 logger.info("Entity is Approved to register product!")
                 product_code = product["product_code"]
                 if product_exist(transaction_executor, product_code):
@@ -75,7 +48,7 @@ def register_product(transaction_executor, product,person_id):
                 else:
                     result = insert_documents(transaction_executor, Constants.PRODUCT_TABLE_NAME, [product])
                     product_id = result[0]
-                    product_request_id = create_product_request(transaction_executor,product_id, person_id)
+                    product_request_id = create_mcg_request(transaction_executor,product_id, person_id,2)
                     logger.info("Request was created for product Id : {} with product request id {}".format(product_id, product_request_id))
                 return product_id , product_request_id
             else:
@@ -99,14 +72,15 @@ if __name__ == '__main__':
                 'high_thresh_temp': 10, #in degree Centigrate
                 'high_thresh_humidity': 40 # percentage   
             },
-            'manufacturer_id': "KGDueWpoXlqEll8FuTK1Sy",
+            'manufacturer_id': "9hUtSNjDALDGIRU0qpyWDf", #change this <<<<---------------------------
             'isApprovedBySuperAdmin':False,
             'product_batches':[
             ]
             }
 
-            person_id = "89gS3wrzGT5JzEO8xMtWlw"
-            
+
+            # must be passed down as a prop from the react state
+            person_id = "LI6Ctqt07eBEW0AtpteyGD"             #change this <<<<---------------------------
             driver.execute_lambda(lambda executor: register_product(executor, new_product, person_id))
     except Exception:
         logger.exception('Error registering product.')
