@@ -2,7 +2,6 @@ from logging import basicConfig, getLogger, INFO
 from datetime import datetime
 from connect_to_ledger import create_qldb_driver
 from sampledata.sample_data import get_document_ids, print_result
-from amazon.ion.simpleion import dumps, loads
 from constants import Constants
 
 
@@ -18,16 +17,17 @@ basicConfig(level=INFO)
     ## in case of vaccine it is GTIN Containing NDC_Code
 
 def product_exist(transaction_executor, product_code):
+  
+
 
     query = 'SELECT * FROM Products as pr WHERE pr.product_code = ?'
     cursor1 = transaction_executor.execute_statement(query,convert_object_to_ion(product_code))
     try:
         next(cursor1)
-        logger.info("Product with produce_code : {} has already been registered or in process of registeration").format(product_code)
+        logger.info("Product with produce_code : {} has already been registered or in process of registeration".format(product_code))
         return True
     except:
         return False
-
 
 
 def register_product(transaction_executor, product,person_id):
@@ -50,7 +50,7 @@ def register_product(transaction_executor, product,person_id):
                     product_id = result[0]
                     product_request_id = create_mcg_request(transaction_executor,product_id, person_id,2)
                     logger.info("Request was created for product Id : {} with product request id {}".format(product_id, product_request_id))
-                return product_id , product_request_id
+                    return product_id , product_request_id
             else:
                 logger.info("Entity not approved yet. Cannot register the product")
         else:
@@ -58,29 +58,29 @@ def register_product(transaction_executor, product,person_id):
     else:
         logger.info("Person doesn't belong to any entity. First Register person with an Entity")
 
+
 if __name__ == '__main__':
 
     try:
         with create_qldb_driver() as driver:
             new_product = {
-            'product_code': "1231234112313", #GTIN for Vaccine with NDC National Drug Code
+            'product_code': "00123451000013", #GTIN for Vaccine with NDC National Drug Code
             'product_name': "Moderna Vaccine",
             'product_price': 10,
             'product_expiry': 120, #in days
-            'storage': {
+            'product_storage': {
                 'low_thresh_temp': 0, #in degrees Centigrate
                 'high_thresh_temp': 10, #in degree Centigrate
                 'high_thresh_humidity': 40 # percentage   
             },
-            'manufacturer_id': "9hUtSNjDALDGIRU0qpyWDf", #change this <<<<---------------------------
+            'manufacturer_id': "23ki18Jamhg8VyRWQsoKic", #change this <<<<---------------------------
             'isApprovedBySuperAdmin':False,
-            'product_batches':[
-            ]
+            'batch_table_id': ''
             }
 
 
             # must be passed down as a prop from the react state
-            person_id = "LI6Ctqt07eBEW0AtpteyGD"             #change this <<<<---------------------------
+            person_id = "ATP79apUuTW33whnMmwsad"             #change this <<<<---------------------------
             driver.execute_lambda(lambda executor: register_product(executor, new_product, person_id))
     except Exception:
         logger.exception('Error registering product.')

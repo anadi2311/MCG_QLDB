@@ -55,7 +55,7 @@ def get_person_ids(transaction_executor):
     statement = 'SELECT PersonIds FROM SCEntities'
     cursor2 = transaction_executor.execute_statement(statement)
     person_ids = list(map(lambda x: x.get('PersonIds'), cursor2))
-    logger.info("Existing Person Ids are: {} ".format(person_ids))
+    # logger.info("Existing Person Ids are: {} ".format(person_ids))
     return person_ids
 
 def get_scentity_ids(transaction_executor):
@@ -63,7 +63,7 @@ def get_scentity_ids(transaction_executor):
     statement = 'SELECT id FROM SCEntities by id'
     cursor2 = transaction_executor.execute_statement(statement)
     scentity_ids = list(map(lambda x: x.get('id'), cursor2))
-    logger.info("Existing scentity ids are {}".format(scentity_ids))
+    # logger.info("Existing scentity ids are {}".format(scentity_ids))
     return scentity_ids
 
 # def lookup_scentity_for_person(transaction_executor, person_id):
@@ -90,17 +90,20 @@ def get_scentity_ids(transaction_executor):
 
 def get_scentityid_from_personid(transaction_executor, person_id):
 
-    values = get_person_ids(transaction_executor)
-    keys = get_scentity_ids(transaction_executor)
-    id_dict = dict(zip(keys,values))
+    val = get_person_ids(transaction_executor)
+    k = get_scentity_ids(transaction_executor)
+    id_dict = dict(zip(k,val))
     
+    # print (id_dict)
     for key, values in id_dict.items():
+        # print(values)
+        # print(person_id)
         if person_id in values:
+            print("person belongs to : {}".format(key))
             return key
         else:
-            logger.info("Person does not belong to any entity")
-            return False
-
+            logger.info("Searching..")
+            continue
 
 # def person_belong_to_scentity(transaction_executor, person_id):
 #     """
@@ -193,6 +196,7 @@ def send_request_to_company(transaction_executor, request_Id, sc_entity):
     cursor_two = transaction_executor.execute_statement(statement, sc_entity_id_code, request_Id)
     
     try:
+        next(cursor_two)
         list_of_document_ids = get_document_ids_from_dml_results(cursor_two)
         logger.info('Request sent with id {}'.format(request_Id))
     except:
@@ -348,16 +352,19 @@ if __name__ == '__main__':
             'isSuperAdmin' : False,
             'isAdmin' : False,
              'PersonContact': {
-                "Email": "JAN.Doe@ubc.ca",
-                'Phone' : "8888888888",
-                'Address': 'FirstNewUser'
+                    "Email": "JAN.Doe@ubc.ca",
+                    'Phone' : "8888888888",
+                    'Address': 'FirstNewUser'
              }}
     
   
             new_sc_entity = {
             "ScEntityName" : " Moderna",
-            "ScEntityLocation" : "345 DEF St, ON, CAN",
-            "ScEntityContact": "1234567890",
+            "ScEntityContact":{
+                "Email":"moderna@moderna.com",
+                "Address":"345 DEF St, ON, CAN",
+                "Phone": "1234567890"
+            },
             "isApprovedBySuperAdmin": False,
             "ScentityTypeCode": 2,
             "PersonIds": [],

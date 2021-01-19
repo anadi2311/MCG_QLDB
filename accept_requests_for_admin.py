@@ -99,7 +99,7 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            request_id = "AIl46rO96mT2ONIu32kvz3"        
+            request_id = "0AdAXOusetrHbGo3VO3ibv"        
   
             driver.execute_lambda(lambda executor: accept_request_to_approve_company_or_product(executor,request_id))
     except Exception:

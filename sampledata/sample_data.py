@@ -56,8 +56,11 @@ class SampleData:
     SCENTITY = [
             {
             "ScEntityName" : " Pfizer",
-            "ScEntityLocation" : "123 ABC St, Texas, USA",
-            "ScEntityContact": "1234567890",
+            "ScEntityContact":{
+                "Email":"pfizer@pfizer.com",
+                "Address":"123 ABC St, Texas, USA",
+                "Phone": "1234567890"
+            },    
             "ScEntityIdentificationCode" : "JXkY1234",    
             "ScEntityIdentificationCodeType" : "BusinessNumber",
             "isApprovedBySuperAdmin": False,
