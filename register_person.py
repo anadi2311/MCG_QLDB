@@ -155,9 +155,10 @@ def lookup_scentity(transaction_executor, new_sc_entity):
         return False
     
 def create_req_to_join_scentity(transaction_executor, sc_entity, employee_id, person_id):
-
+    request_number = get_index_number(transaction_executor,Constants.JOINING_REQUEST_TABLE_NAME,Constants.JOINING_REQUESTID_INDEX_NAME)
     # insert the request document in request table
     request = {
+        "JoiningRequestNumber":request_number,
         "SenderEmployeeId": employee_id,
         "SenderPersonId" : person_id,
         "ScEntityIdentificationCode": sc_entity['ScEntityIdentificationCode'],
@@ -168,22 +169,23 @@ def create_req_to_join_scentity(transaction_executor, sc_entity, employee_id, pe
     return result[0]
     
     
-def calculateTotalRequests(transaction_executor, sc_entity):
-    
-    sc_entity_id_code = sc_entity['ScEntityIdentificationCode']
-        
-    logger.info("Calculating total requests")
-    
-    query_one = 'SELECT SIZE(JoiningRequests) as RequestNumbers FROM SCEntities AS s WHERE s.ScEntityIdentificationCode = ?'
-    cursor_one= transaction_executor.execute_statement(query_one,sc_entity_id_code)
-    
-    
-    for row in cursor_one:
-        request_number = int(dumps(row["RequestNumbers"], binary = False,indent='  ', omit_version_marker=True))
-        logger.info("Total requests for this company are {}".format(request_number))
+def get_index_number(transaction_executor, table_name,request_index_name):
+    statement = "SELECT SUM(t.{}) as ret_val FROM {} as t".format(request_index_name,table_name)
+    print("Table: {} and Index: {}".format(table_name,request_index_name))
+    cursor = transaction_executor.execute_statement(statement)
 
-    return request_number
+    ret_val = list(map(lambda x: x.get('ret_val'), cursor))
+    # print(str(type(ret_val[0])))
+    # logger.info("ret_val is {}".format(type(ret_val[0])))
+    if str(type(ret_val[0])) == "<class 'amazon.ion.simple_types.IonPyNull'>":
+        ret_val = 1
+        logger.info("ret_val is Null")
+    else:
+        ret_val = int(dumps(ret_val[0],binary=False, indent='  ', omit_version_marker=True))
+        ret_val = ret_val+1
 
+    return ret_val
+    
     
 def send_request_to_company(transaction_executor, request_Id, sc_entity):
     
@@ -198,7 +200,7 @@ def send_request_to_company(transaction_executor, request_Id, sc_entity):
     try:
         next(cursor_two)
         list_of_document_ids = get_document_ids_from_dml_results(cursor_two)
-        logger.info('Request sent with id {}'.format(request_Id))
+        logger.info('Joining Request sent with id {}'.format(request_Id))
     except:
         logger.exception("Couldn't send the request.")
 
@@ -241,7 +243,9 @@ def mcg_request_already_sent(transaction_executor, document_id):
         return False
 
 def create_mcg_request(transaction_executor,document_id,person_id, request_type):
+    request_number = get_index_number(transaction_executor,Constants.SUPERADMIN_REQUEST_TABLE_NAME,Constants.SUPERADMIN_REQUEST_INDEX_NAME)
     request = {
+        "McgRequestNumber": request_number,
         "Document_id": document_id,
         "Request_type": request_type,
         "SenderPersonId" : person_id,
@@ -256,9 +260,9 @@ def create_mcg_request(transaction_executor,document_id,person_id, request_type)
         request_id = result[0]
         return request_id
 
-def get_approval_status(transaction_executor, scentity_id):
+def get_document_approval_status(transaction_executor, table_name, scentity_id):
     
-    statement = 'SELECT s.isApprovedBySuperAdmin FROM SCEntities as s by id where id = ?'
+    statement = 'SELECT s.isApprovedBySuperAdmin FROM {} as s by id where id = ?'.format(table_name)
     cursor = transaction_executor.execute_statement(statement, scentity_id)
     approval_status = list(map(lambda x: x.get('isApprovedBySuperAdmin'), cursor))
     
@@ -298,7 +302,7 @@ def register_new_user_with_scentity(transaction_executor, person, new_sc_entity)
             scentity_id_code = new_sc_entity['ScEntityIdentificationCode']
             scentity_id = next(get_document_ids(transaction_executor,Constants.SCENTITY_TABLE_NAME,'ScEntityIdentificationCode',scentity_id_code))
 
-            if get_approval_status(transaction_executor,scentity_id):
+            if get_document_approval_status(transaction_executor,Constants.SCENTITY_TABLE_NAME, scentity_id):
                 if req_already_sent(transaction_executor, person_id) == True :
                     logger.info("Please wait for your company admin to approve the request.")
                 else:
@@ -313,6 +317,7 @@ def register_new_user_with_scentity(transaction_executor, person, new_sc_entity)
             else:
                 update_person_to_admin(transaction_executor,person_id)
                 new_sc_entity.update({'PersonIds': [str(person_id)]})
+                new_sc_entity.update({'isApprovedBySuperAdmin': False})
                 try:
                     result = insert_documents( transaction_executor, Constants.SCENTITY_TABLE_NAME, [new_sc_entity])
                     sc_entity_id = result[0]
@@ -346,8 +351,8 @@ if __name__ == '__main__':
             #  }}
 
             new_person = {
-            'EmployeeId': 'N123',
-            'FirstName': 'CHAN',
+            'EmployeeId': 'ZAN123',
+            'FirstName': 'MAN',
             'LastName': 'DOE',
             'isSuperAdmin' : False,
             'isAdmin' : False,
@@ -357,33 +362,35 @@ if __name__ == '__main__':
                     'Address': 'FirstNewUser'
              }}
     
-  
+            # new_sc_entity = {
+            # "ScEntityName" : " Moderna",
+            # "ScEntityContact":{
+            #     "Email":"moderna@moderna.com",
+            #     "Address":"345 DEF St, ON, CAN",
+            #     "Phone": "1234567890"
+            # },
+            # "isApprovedBySuperAdmin": False,
+            # "ScentityTypeCode": "2",
+            # "PersonIds": [],
+            # "JoiningRequests" : [],
+            # "ScEntityIdentificationCode" : "MODERNA1234",    
+            # "ScEntityIdentificationCodeType" : "BusinessNumber"               
+            # }
+
             new_sc_entity = {
-            "ScEntityName" : " Moderna",
+            "ScEntityName" : " CompanyC",
             "ScEntityContact":{
                 "Email":"moderna@moderna.com",
                 "Address":"345 DEF St, ON, CAN",
                 "Phone": "1234567890"
             },
-            "isApprovedBySuperAdmin": False,
+            "isApprovedBySuperAdmin": True,
             "ScentityTypeCode": 2,
             "PersonIds": [],
             "JoiningRequests" : [],
-            "ScEntityIdentificationCode" : "LMOP1234",    
+            "ScEntityIdentificationCode" : "ASD1234",    
             "ScEntityIdentificationCodeType" : "BusinessNumber"               
             }
-
-            # new_sc_entity = {
-            # "ScEntityName" : " CompanyB",
-            # "ScEntityLocation" : "abad,asdasd,asdad",
-            # "ScEntityContact": "1234567890",
-            # "isApprovedBySuperAdmin": False,
-            # "ScentityTypeCode": 2,
-            # "PersonIds": [],
-            # "JoiningRequests" : [],
-            # "ScEntityIdentificationCode" : "ASDSD1234",    
-            # "ScEntityIdentificationCodeType" : "BusinessNumber"               
-            # }
 
             driver.execute_lambda(lambda executor: register_new_user_with_scentity(executor, new_person, new_sc_entity))
     except Exception:

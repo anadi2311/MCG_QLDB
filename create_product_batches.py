@@ -6,8 +6,10 @@ from constants import Constants
 
 
 from sampledata.sample_data import convert_object_to_ion, get_value_from_documentid
+from create_index import create_index
 from insert_document import insert_documents
-from register_person import get_scentityid_from_personid, create_mcg_request, get_approval_status
+from register_person import get_scentityid_from_personid, get_document_approval_status, get_index_number
+
 
 logger = getLogger(__name__)
 basicConfig(level=INFO)
@@ -16,13 +18,13 @@ basicConfig(level=INFO)
 #create_vaccine_batch(product_id,batch --> batchSno.no.,qty, expiry date, 
 #product_new_batch
 
-def get_list_of_productids(transaction_executor,manufacturer_id):
-    query = 'SELECT * FROM Products as p by id WHERE p.manufacturer_id = ?'
-    cursor = transaction_executor.execute_statement(query,manufacturer_id)
+def get_list_of_productids(transaction_executor,ManufacturerId):
+    query = 'SELECT * FROM Products as p by id WHERE p.ManufacturerId = ?'
+    cursor = transaction_executor.execute_statement(query,ManufacturerId)
     try:
         next(cursor)
         product_ids = list(map(lambda x: x.get('id'), cursor))
-        logger.info("product ids sold by {} are : {}".format(manufacturer_id,product_ids))
+        logger.info("product ids sold by {} are : {}".format(ManufacturerId,product_ids))
         return product_ids
     except StopIteration:
         logger.info("No product ids formed!")
@@ -41,28 +43,30 @@ def product_exists(transaction_executor, product_id):
 
 def person_authorized_to_create_product(transaction_executor,product_id,person_id):
     actual_scentity_id = get_scentityid_from_personid(transaction_executor,person_id)
-    manufacturer_id = get_value_from_documentid(transaction_executor, Constants.PRODUCT_TABLE_NAME,product_id,"manufacturer_id")
-    logger.info("actual_id: {} and manufactuter id : {}".format(actual_scentity_id,manufacturer_id))
+    ManufacturerId = get_value_from_documentid(transaction_executor, Constants.PRODUCT_TABLE_NAME,product_id,"ManufacturerId")
+    logger.info("actual_id: {} and manufactuter id : {}".format(actual_scentity_id,ManufacturerId))
 
-    if actual_scentity_id == manufacturer_id[0]:
+    if actual_scentity_id == ManufacturerId[0]:
         logger.info("Authorized!!")
         return True
     else:
         logger.info("Ids not matched!")
         return False
 
+
 def create_batch_table(transaction_executor,product_id):
-    table_name = product_id + "Batches"
+    table_name = "Batches" + product_id
     logger.info("table_name for {} batches is {}".format(product_id,table_name))
     statement = 'CREATE TABLE {}'.format(table_name)
     cursor = transaction_executor.execute_statement(statement)
     ret_val = list(map(lambda x: x.get('tableId'), cursor))
     ret_val = ret_val[0]
-    logger.info('ret_val is {}'.format(ret_val))
+    logger.info('Tabled Id is {}'.format(ret_val))
+    create_index(transaction_executor,table_name,"BatchNo") #<<----------- this could be the problem
     return ret_val
     
-def update_batch_table_id(transaction_executor,product_id,batch_table_id):
-    update_statement = " UPDATE Products AS p BY id SET p.batch_table_name =? WHERE id = ?"
+def update_BatchTableId(transaction_executor,product_id,batch_table_id):
+    update_statement = " UPDATE Products AS p BY id SET p.BatchTableId =? WHERE id = ?"
     cursor = transaction_executor.execute_statement(update_statement, batch_table_id, product_id)
     try:
         next(cursor)
@@ -71,10 +75,9 @@ def update_batch_table_id(transaction_executor,product_id,batch_table_id):
 
 
 def batch_table_exist(transaction_executor, product_id):
-    query = 'SELECT p.batch_table_id FROM Products as p by id WHERE id = ?'
+    query = 'SELECT p.BatchTableId FROM Products as p by id WHERE id = ?'
     cursor = transaction_executor.execute_statement(query,product_id)
-    ret_val = list(map(lambda x: x.get('batch_table_id'), cursor))
-    print(ret_val)
+    ret_val = list(map(lambda x: x.get('BatchTableId'), cursor))
     ret_val = ret_val[0]
     if len(ret_val) > 0:
         return ret_val
@@ -89,44 +92,45 @@ def get_tableName_from_tableId(transaction_executor, table_id):
     ret_val = ret_val[0]
     return ret_val
 
-def batch_no_exist(transaction_executor,batch_table_name,batch_no):
-    statement = 'SELECT FROM {} as b WHERE b.batch_no = ?'.format(batch_table_name)
-    cursor = transaction_executor.execute_statement(statement,batch_no)
-    try:
-        next(cursor)
-        return True
-    except:
-        logger.info("Batch Number not matched. Adding the new batch info ..")
-        return False
+# def BatchNo_exist(transaction_executor,batch_table_name,BatchNo):
+#     statement = 'SELECT * FROM {} AS b WHERE b.BatchNo = ?'.format(batch_table_name)
+#     cursor = transaction_executor.execute_statement(statement,BatchNo)
+#     try:
+#         next(cursor)
+#         return True
+#     except:
+#         logger.info("Batch Number not matched. Adding the new batch info ..")
+#         return False
 
 def generate_inventory( transaction_executor,product_id,batch):
 
     if batch_table_exist(transaction_executor,product_id):
-        batch_table_id =batch_table_exist(transaction_executor,product_id)
-        logger.info("Batch Table Found : {}!".format(batch_table_id)) 
+        BatchTableId =batch_table_exist(transaction_executor,product_id)
+        logger.info("Batch Table Found : {}!".format(BatchTableId)) 
     else:
-        batch_table_id = create_batch_table(transaction_executor,product_id)
-        logger.info("Batch Table was created with the id: {}".format(batch_table_id))
-        update_batch_table_id(transaction_executor,product_id,batch_table_id)
+        BatchTableId = create_batch_table(transaction_executor,product_id)
+        logger.info("Batch Table was created with the id: {}".format(BatchTableId))
+        update_BatchTableId(transaction_executor,product_id,BatchTableId)
 
     # get table name from table_id 
-    batch_table_name = get_tableName_from_tableId(transaction_executor,batch_table_id)
-    if batch_no_exist(transaction_executor,batch_table_name,batch.batch_no):
-        logger.info("Not allowed to repeat batch number. ")
-    else:
-        statement = 'INSERT INTO {} ?'.format(batch_table_name)
-        cursor =  transaction_executor.execute_statement(statement,convert_object_to_ion(batch))
-
-        try:
-            next(cursor)
-            logger.info(" Vaccine Inventory was added.")
-        except StopIteration:
-            logger.info("Problem in generating Inventory.")
+    batch_table_name = get_tableName_from_tableId(transaction_executor,BatchTableId)
+    batch_num = get_index_number(transaction_executor,batch_table_name,"BatchNo")
+    print("batch number is {}".format(batch_num))
+    batch['BatchNo'] = batch_num
+    print(batch)
+    statement = 'INSERT INTO {} ?'.format(batch_table_name)
+    cursor =  transaction_executor.execute_statement(statement,convert_object_to_ion(batch))
+    
+    try:
+        next(cursor)
+        logger.info(" Vaccine Inventory was added.")
+    except StopIteration:
+        logger.info("Problem in generating Inventory.")
 
 
 def create_vaccine_batch(transaction_executor, person_id,product_id,batch):
     
-    ##check if the product_code exists
+    ##check if the ProductCode exists
     if product_exists(transaction_executor,product_id):
         ##check if the product is approved by superadmin
         if get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME, product_id,"isApprovedBySuperAdmin"):
@@ -147,14 +151,14 @@ if __name__ == '__main__':
         with create_qldb_driver() as driver:
             
             batch = {
-                'batch_no':'1',
-                'unitsProduced':100,
+                'BatchNo' :'', #<<--- autoincremented batch numbers from 1 
+                'UnitsProduced':100,
                 'MfgDate':'YYMMDD',
-                'productInstances': list(range(1,101)) #Create 100 vaccines with SNO from 1 to 100 ==> can be changed with actual Alphanumeric SNo
+                'ProduceInstances': list(range(1,101)) #Create 100 vaccines with SNO from 1 to 100 ==> can be changed with actual Alphanumeric SNo
             }
 
-            person_id = "ATP79apUuTW33whnMmwsad"
-            product_id = "Dp04VJIoHUgJILB0bR8YoH"
+            person_id = "LY4HT0HnBcK1NJQNVPFjah"
+            product_id = "84MQXnVPeze3IEGwsBTn8d"
 
             driver.execute_lambda(lambda executor: create_vaccine_batch(executor, person_id,product_id, batch))
     except Exception:
