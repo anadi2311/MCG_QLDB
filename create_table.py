@@ -35,6 +35,15 @@ if __name__ == '__main__':
                                    create_table(x, Constants.JOINING_REQUEST_TABLE_NAME) and
                                    create_table(x,Constants.SUPERADMIN_REQUEST_TABLE_NAME) and
                                    create_table(x,Constants.PURCHASE_ORDER_TABLE_NAME) and
+                                   create_table(x,Constants.INVOICE_TABLE_NAME) and
+                                   create_table(x,Constants.CONTAINER_TABLE_NAME) and
+                                   create_table(x,Constants.IOT_TABLE_NAME) and
+                                   create_table(x,Constants.CERTIFICATE_OF_ORIGIN_TABLE_NAME) and
+                                   create_table(x,Constants.LORRY_RECEIPT_TABLE_NAME) and
+                                   create_table(x,Constants.AIRWAY_BILL_TABLE_NAME) and
+                                   create_table(x,Constants.PALLETE_TABLE_NAME) and
+                                   create_table(x,Constants.CASES_TABLE_NAME) and
+                                   create_table(x,Constants.PACKING_LIST_TABLE_NAME)and 
                                    create_table(x,Constants.PRODUCT_TABLE_NAME),
                                    lambda retry_attempt: logger.info('Retrying due to OCC conflict...'))
             logger.info('Tables created successfully.')

@@ -117,6 +117,7 @@ def generate_inventory( transaction_executor,product_id,batch):
     batch_num = get_index_number(transaction_executor,batch_table_name,"BatchNo")
     print("batch number is {}".format(batch_num))
     batch['BatchNo'] = batch_num
+    batch['UnitsRemaining'] = int(batch['UnitsProduced'])
     print(batch)
     statement = 'INSERT INTO {} ?'.format(batch_table_name)
     cursor =  transaction_executor.execute_statement(statement,convert_object_to_ion(batch))
@@ -153,12 +154,14 @@ if __name__ == '__main__':
             batch = {
                 'BatchNo' :'', #<<--- autoincremented batch numbers from 1 
                 'UnitsProduced':100,
-                'MfgDate':'YYMMDD',
-                'ProduceInstances': list(range(1,101)) #Create 100 vaccines with SNO from 1 to 100 ==> can be changed with actual Alphanumeric SNo
+                'UnitsRemaining':"",
+                'MfgDate':datetime.today().strftime('%Y-%m-%d'),
+                'ProductInstances': list(range(1,101)), #Create 100 vaccines with SNO from 1 to 100 ==> can be changed with actual Alphanumeric SNo
+                'CasesIds':[]
             }
 
-            person_id = "LY4HT0HnBcK1NJQNVPFjah"
-            product_id = "84MQXnVPeze3IEGwsBTn8d"
+            person_id = "9RWotYRRT3l6WTbCAXdlZj"
+            product_id = "KbW0jGb3q7wBCeRf1qUcHm"
 
             driver.execute_lambda(lambda executor: create_vaccine_batch(executor, person_id,product_id, batch))
     except Exception:

@@ -6,10 +6,20 @@ class Constants:
     PERSON_TABLE_NAME = "Persons"
     SCENTITY_TABLE_NAME = " SCEntities"
     JOINING_REQUEST_TABLE_NAME = "JoiningRequest"
+    SUPERADMIN_REQUEST_TABLE_NAME = "McgRequests" 
     PRODUCT_TABLE_NAME = "Products"
     PURCHASE_ORDER_TABLE_NAME = "PurchaseOrders"
+    
+    INVOICE_TABLE_NAME = "Invoices"
+    CERTIFICATE_OF_ORIGIN_TABLE_NAME = "CertificateOfOrigins"
+    LORRY_RECEIPT_TABLE_NAME = "LorryReciepts"
+    PACKING_LIST_TABLE_NAME = "PackingLists"
+    AIRWAY_BILL_TABLE_NAME = "AirwayBills"
+    CONTAINER_TABLE_NAME = "Containers"
+    IOT_TABLE_NAME = 'IoTs'
+    CASES_TABLE_NAME = 'Cases'
+    PALLETE_TABLE_NAME = 'Palletes'
 
-    SUPERADMIN_REQUEST_TABLE_NAME = "McgRequests"  
     # SUPERADMIN_PRODUCTREQUEST_TABLE_NAME = "McgProductRequest"  
        
     PERSON_ID_INDEX_NAME ="EmployeeId"
@@ -19,9 +29,19 @@ class Constants:
     # SUPERADMIN_PRODUCTREQUEST_INDEX_NAME = "ProductRequestId"
     PRODUCT_ID_INDEX_NAME = "ProductNumber"  
     PURCHASE_ORDER_ID_INDEX_NAME = 'PurchaseOrderNumber'
+    INVOICE_ID_INDEX_NAME = "InvoiceNumber"
+    CERTIFICATE_OF_ORIGIN_INDEX_NAME = "CertificateOfOriginNumber"
+    LORRY_RECEIPT_INDEX_NAME = "LorryReceiptNumber"
+    AIRWAY_BILL_INDEX_NAME = "AirwayBillNumber"
+    CONATINER_INDEX_NAME = "ContainerNumber"
+    IOT_INDEX_NAME = "IoTNumber"
+    CASES_INDEX_NAME = "CaseNumber"
+    PALLETE_INDEX_NAME = "PalleteNumber"
+    PACKING_LIST_INDEX_NAME = "PackingListNumber"
 
 
-
+    PALLETS_PER_CONTAINER = 2
+    CASES_PER_PALLETE = 5
     # JOURNAL_EXPORT_S3_BUCKET_NAME_PREFIX = "qldb-tutorial-journal-export"
     # USER_TABLES = "information_schema.user_tables"
     # S3_BUCKET_ARN_TEMPLATE = "arn:aws:s3:::"

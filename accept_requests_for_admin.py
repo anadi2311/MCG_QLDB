@@ -93,13 +93,11 @@ def accept_request_to_approve_company_or_product(transaction_executor, request_i
         logger.info("Any request with request id : {} doesn't exist.".format(request_id))
 
 
-
-
-if __name__ == '__main__':
+if __name__ == '__main__': 
     try:
         with create_qldb_driver() as driver:
             
-            request_id = "KbW0j8TbGo14Dp5wCJzvMX"        
+            request_id = "A8714Mr0rxeAwsXmwPB05E"        
   
             driver.execute_lambda(lambda executor: accept_request_to_approve_company_or_product(executor,request_id))
     except Exception:

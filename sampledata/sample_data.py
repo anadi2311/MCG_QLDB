@@ -130,13 +130,15 @@ def get_document_ids_from_dml_results(result):
     return ret_val
 
 def get_value_from_documentid(transaction_executor, table_name, document_id, field):
-    
-    query = "SELECT t.{} FROM {} as t BY d_id WHERE d_id = ?".format(field, table_name)
-    cursor_three = transaction_executor.execute_statement(query, document_id)
-    
-    value = list(map(lambda x: x.get(field), cursor_three))
-    logger.info("value of {} in {} is : {} ".format(field, document_id, value))
-    return value
+    if document_exist(transaction_executor,table_name,document_id):
+        query = "SELECT t.{} FROM {} as t BY d_id WHERE d_id = ?".format(field, table_name)
+        cursor_three = transaction_executor.execute_statement(query, document_id)
+        
+        value = list(map(lambda x: x.get(field), cursor_three))
+        logger.info("value of {} in {} is : {} ".format(field, document_id, value))
+        return value
+    else:
+        return [False]
 
 def delete_document(transaction_executor, table_name, document_id):
     query = 'DELETE FROM {} as t BY id  WHERE id IN ?'.format(table_name)
@@ -146,6 +148,16 @@ def delete_document(transaction_executor, table_name, document_id):
         logger.info( 'Successfully deleted')
     except:
         logger.info('Problem in deletion!')
+
+def document_exist(transaction_executor, table_name, document_id):
+    query = 'SELECT * FROM {} as t by id WHERE id = ?'.format(table_name)
+    cursor = transaction_executor.execute_statement(query,document_id)
+    try:
+        next(cursor)
+        return True
+    except:
+        logger.info("Document doesn't exist. Check document id!")
+        return False
 
 def print_result(cursor):
     """
@@ -162,3 +174,13 @@ def print_result(cursor):
         logger.info(dumps(row, binary=False, indent='  ', omit_version_marker=True))
         result_counter += 1
     return result_counter
+
+def update_document( transaction_executor, table_name,field_name,document_id,new_value):
+    update_statement = " UPDATE {} AS j BY id SET j.{} = {} WHERE id = ?".format(table_name,field_name,str(new_value))
+    cursor = transaction_executor.execute_statement(update_statement,document_id)
+
+    try:
+        next(cursor)
+    except StopIteration:
+        logger.info("Error updating the document.")
+ 

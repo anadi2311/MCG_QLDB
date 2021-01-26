@@ -170,7 +170,7 @@ def create_req_to_join_scentity(transaction_executor, sc_entity, employee_id, pe
     
     
 def get_index_number(transaction_executor, table_name,request_index_name):
-    statement = "SELECT SUM(t.{}) as ret_val FROM {} as t".format(request_index_name,table_name)
+    statement = "SELECT COUNT(t.{}) as ret_val FROM {} as t".format(request_index_name,table_name)
     print("Table: {} and Index: {}".format(table_name,request_index_name))
     cursor = transaction_executor.execute_statement(statement)
 
@@ -185,7 +185,6 @@ def get_index_number(transaction_executor, table_name,request_index_name):
         ret_val = ret_val+1
 
     return ret_val
-    
     
 def send_request_to_company(transaction_executor, request_Id, sc_entity):
     
@@ -260,10 +259,10 @@ def create_mcg_request(transaction_executor,document_id,person_id, request_type)
         request_id = result[0]
         return request_id
 
-def get_document_approval_status(transaction_executor, table_name, scentity_id):
+def get_document_approval_status(transaction_executor, table_name, document_id):
     
     statement = 'SELECT s.isApprovedBySuperAdmin FROM {} as s by id where id = ?'.format(table_name)
-    cursor = transaction_executor.execute_statement(statement, scentity_id)
+    cursor = transaction_executor.execute_statement(statement, document_id)
     approval_status = list(map(lambda x: x.get('isApprovedBySuperAdmin'), cursor))
     
     logger.info("approval status : {}".format(approval_status))
@@ -350,17 +349,33 @@ if __name__ == '__main__':
             #     'Address': 'FirstNewUser'
             #  }}
 
-            new_person = {
-            'EmployeeId': 'ZAN123',
-            'FirstName': 'MAN',
-            'LastName': 'DOE',
-            'isSuperAdmin' : False,
-            'isAdmin' : False,
-             'PersonContact': {
-                    "Email": "JAN.Doe@ubc.ca",
-                    'Phone' : "8888888888",
-                    'Address': 'FirstNewUser'
-             }}
+            # new_sc_entity = {
+            # "ScEntityName" : " BuyerCompanyC",
+            # "ScEntityContact":{
+            #     "Email":"moderna@moderna.com",
+            #     "Address":"345 DEF St, ON, CAN",
+            #     "Phone": "1234567890"
+            # },
+            # "isApprovedBySuperAdmin": True,
+            # "ScentityTypeCode": "2",
+            # "PersonIds": [],
+            # "JoiningRequests" : [],
+            # "ScEntityIdentificationCode" : "ASD1234",    
+            # "ScEntityIdentificationCodeType" : "BusinessNumber"               
+            # }
+            
+
+            # new_person = {
+            # 'EmployeeId': 'MAN123',
+            # 'FirstName': 'MAN',
+            # 'LastName': 'DOE',
+            # 'isSuperAdmin' : False,
+            # 'isAdmin' : False,
+            #  'PersonContact': {
+            #         "Email": "JAN.Doe@ubc.ca",
+            #         'Phone' : "8888888888",
+            #         'Address': 'FirstNewUser'
+            #  }}
     
             # new_sc_entity = {
             # "ScEntityName" : " Moderna",
@@ -377,20 +392,32 @@ if __name__ == '__main__':
             # "ScEntityIdentificationCodeType" : "BusinessNumber"               
             # }
 
+            new_person = {
+            'EmployeeId': 'FAN123',
+            'FirstName': 'FAN',
+            'LastName': 'DOE',
+            'isSuperAdmin' : False,
+            'isAdmin' : False,
+             'PersonContact': {
+                    "Email": "JAN.Doe@ubc.ca",
+                    'Phone' : "8888888888",
+                    'Address': 'FirstNewUser'
+             }}
+
             new_sc_entity = {
-            "ScEntityName" : " CompanyC",
+            "ScEntityName" : " FEDX",
             "ScEntityContact":{
-                "Email":"moderna@moderna.com",
+                "Email":"FEDx@FEDx.com",
                 "Address":"345 DEF St, ON, CAN",
                 "Phone": "1234567890"
             },
             "isApprovedBySuperAdmin": True,
-            "ScentityTypeCode": 2,
+            "ScentityTypeCode": "2",
             "PersonIds": [],
             "JoiningRequests" : [],
-            "ScEntityIdentificationCode" : "ASD1234",    
+            "ScEntityIdentificationCode" : "COOODDO1234",    #<<--------must be checked from a govt. available data source
             "ScEntityIdentificationCodeType" : "BusinessNumber"               
-            }
+            }            
 
             driver.execute_lambda(lambda executor: register_new_user_with_scentity(executor, new_person, new_sc_entity))
     except Exception:
