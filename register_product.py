@@ -84,13 +84,13 @@ if __name__ == '__main__':
                 'HighThreshTemp': 10, #in degree Centigrate
                 'HighThreshHumidity': 40 # percentage   
             },
-            'ManufacturerId': "A8714Mqp6tg73ZXHvdfiYL", #change this <<<<---------------------------
+            'ManufacturerId': "BPxNtfQ0qEx4T2qmDjDQKI", #change this <<<<---------------------------
             'isApprovedBySuperAdmin':False,
             'BatchTableId': ''
             }
 
             # must be passed down as a prop from the react state
-            person_id = "9RWotYRRT3l6WTbCAXdlZj"             #change this <<<<---------------------------
+            person_id = "ChnkiwR6B4325uiSVdJlyQ"             #change this <<<<---------------------------
             driver.execute_lambda(lambda executor: register_product(executor, new_product, person_id))
     except Exception:
         logger.exception('Error registering product.')

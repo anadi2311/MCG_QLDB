@@ -176,6 +176,7 @@ def print_result(cursor):
     return result_counter
 
 def update_document( transaction_executor, table_name,field_name,document_id,new_value):
+    logger.info(new_value)
     update_statement = " UPDATE {} AS j BY id SET j.{} = {} WHERE id = ?".format(table_name,field_name,str(new_value))
     cursor = transaction_executor.execute_statement(update_statement,document_id)
 

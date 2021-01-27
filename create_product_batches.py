@@ -153,15 +153,15 @@ if __name__ == '__main__':
             
             batch = {
                 'BatchNo' :'', #<<--- autoincremented batch numbers from 1 
-                'UnitsProduced':100,
+                'UnitsProduced':1000, # make this automatic by counting length of product instances
                 'UnitsRemaining':"",
                 'MfgDate':datetime.today().strftime('%Y-%m-%d'),
-                'ProductInstances': list(range(1,101)), #Create 100 vaccines with SNO from 1 to 100 ==> can be changed with actual Alphanumeric SNo
-                'CasesIds':[]
+                'ProductInstances': list(range(1,1001)), #Create 100 vaccines with SNO from 1 to 100 ==> can be changed with actual Alphanumeric SNo
+                'CaseIds':[]
             }
 
-            person_id = "9RWotYRRT3l6WTbCAXdlZj"
-            product_id = "KbW0jGb3q7wBCeRf1qUcHm"
+            person_id = "ChnkiwR6B4325uiSVdJlyQ"
+            product_id = "IyNXobwHOZr1lzgTtHcN5I"
 
             driver.execute_lambda(lambda executor: create_vaccine_batch(executor, person_id,product_id, batch))
     except Exception:

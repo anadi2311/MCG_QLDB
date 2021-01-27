@@ -63,7 +63,7 @@ if __name__ == '__main__':
         with create_qldb_driver() as driver:
             purchaseorderdetails = {
                 "PurchaseOrderNumber":"",
-                "ProductId":"KbW0jGb3q7wBCeRf1qUcHm",
+                "ProductId":"IyNXobwHOZr1lzgTtHcN5I",
                 "OrderQuantity" : 2, ## <<------- must be in integer and refers to number of containers ordered (In this case total vaccines ordered are 100)
                 "Orderer":{
                     "OrdererCompanyId":"",
@@ -72,7 +72,7 @@ if __name__ == '__main__':
                 "isOrderShipped":False
             }
             # must be passed down as a prop from the react state
-            person_id = "9RWotYRRT3l6WTbCAXdlZj"             #change this <<<<---------------------------
+            person_id = "ChnkiwR6B4325uiSVdJlyQ"             #change this <<<<---------------------------
             driver.execute_lambda(lambda executor: create_purchase_order(executor, person_id,purchaseorderdetails))
     except Exception:
         logger.exception('Error creating order.')

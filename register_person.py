@@ -337,32 +337,32 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            # new_person = {
-            # 'EmployeeId': 'BOB123',
-            # 'FirstName': 'Bob',
-            # 'LastName': 'Doe',
-            # 'isSuperAdmin' : False,
-            # 'isAdmin' : False,
-            #  'PersonContact': {
-            #     "Email": "Bob.Doe@ubc.ca",
-            #     'Phone' : "8888888888",
-            #     'Address': 'FirstNewUser'
-            #  }}
+            new_person = {
+            'EmployeeId': 'BOB123',
+            'FirstName': 'Bob',
+            'LastName': 'Doe',
+            'isSuperAdmin' : False,
+            'isAdmin' : False,
+             'PersonContact': {
+                "Email": "Bob.Doe@ubc.ca",
+                'Phone' : "8888888888",
+                'Address': 'FirstNewUser'
+             }}
 
-            # new_sc_entity = {
-            # "ScEntityName" : " BuyerCompanyC",
-            # "ScEntityContact":{
-            #     "Email":"moderna@moderna.com",
-            #     "Address":"345 DEF St, ON, CAN",
-            #     "Phone": "1234567890"
-            # },
-            # "isApprovedBySuperAdmin": True,
-            # "ScentityTypeCode": "2",
-            # "PersonIds": [],
-            # "JoiningRequests" : [],
-            # "ScEntityIdentificationCode" : "ASD1234",    
-            # "ScEntityIdentificationCodeType" : "BusinessNumber"               
-            # }
+            new_sc_entity = {
+            "ScEntityName" : " BuyerCompanyC",
+            "ScEntityContact":{
+                "Email":"moderna@moderna.com",
+                "Address":"345 DEF St, ON, CAN",
+                "Phone": "1234567890"
+            },
+            "isApprovedBySuperAdmin": True,
+            "ScentityTypeCode": "2",
+            "PersonIds": [],
+            "JoiningRequests" : [],
+            "ScEntityIdentificationCode" : "ASD1234",    
+            "ScEntityIdentificationCodeType" : "BusinessNumber"               
+            }
             
 
             # new_person = {
@@ -392,32 +392,32 @@ if __name__ == '__main__':
             # "ScEntityIdentificationCodeType" : "BusinessNumber"               
             # }
 
-            new_person = {
-            'EmployeeId': 'FAN123',
-            'FirstName': 'FAN',
-            'LastName': 'DOE',
-            'isSuperAdmin' : False,
-            'isAdmin' : False,
-             'PersonContact': {
-                    "Email": "JAN.Doe@ubc.ca",
-                    'Phone' : "8888888888",
-                    'Address': 'FirstNewUser'
-             }}
+            # new_person = {
+            # 'EmployeeId': 'FAN123',
+            # 'FirstName': 'FAN',
+            # 'LastName': 'DOE',
+            # 'isSuperAdmin' : False,
+            # 'isAdmin' : False,
+            #  'PersonContact': {
+            #         "Email": "JAN.Doe@ubc.ca",
+            #         'Phone' : "8888888888",
+            #         'Address': 'FirstNewUser'
+            #  }}
 
-            new_sc_entity = {
-            "ScEntityName" : " FEDX",
-            "ScEntityContact":{
-                "Email":"FEDx@FEDx.com",
-                "Address":"345 DEF St, ON, CAN",
-                "Phone": "1234567890"
-            },
-            "isApprovedBySuperAdmin": True,
-            "ScentityTypeCode": "2",
-            "PersonIds": [],
-            "JoiningRequests" : [],
-            "ScEntityIdentificationCode" : "COOODDO1234",    #<<--------must be checked from a govt. available data source
-            "ScEntityIdentificationCodeType" : "BusinessNumber"               
-            }            
+            # new_sc_entity = {
+            # "ScEntityName" : " FEDX",
+            # "ScEntityContact":{
+            #     "Email":"FEDx@FEDx.com",
+            #     "Address":"345 DEF St, ON, CAN",
+            #     "Phone": "1234567890"
+            # },
+            # "isApprovedBySuperAdmin": True,
+            # "ScentityTypeCode": "2",
+            # "PersonIds": [],
+            # "JoiningRequests" : [],
+            # "ScEntityIdentificationCode" : "COOODDO1234",    #<<--------must be checked from a govt. available data source
+            # "ScEntityIdentificationCodeType" : "BusinessNumber"               
+            # }            
 
             driver.execute_lambda(lambda executor: register_new_user_with_scentity(executor, new_person, new_sc_entity))
     except Exception:

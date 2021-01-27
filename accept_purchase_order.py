@@ -113,8 +113,8 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            purchaseorderid = "CMVdeWa1IeRJCYYKU0b9rc"        
-            person_id = "9RWotYRRT3l6WTbCAXdlZj"
+            purchaseorderid = "C1DYY8qp9N8Fx5M1VVNkLl"        
+            person_id = "ChnkiwR6B4325uiSVdJlyQ"
             driver.execute_lambda(lambda executor: accept_order(executor, purchaseorderid, person_id))
     except Exception:
         logger.exception('Error accepting the order.')  
