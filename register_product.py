@@ -58,6 +58,7 @@ def register_product(transaction_executor, product,person_id):
                         product_id = result[0]
                         product_request_id = create_mcg_request(transaction_executor,product_id, person_id,2)
                         logger.info("Request was created for product Id : {} with product request id {}".format(product_id, product_request_id))
+                         logger.info(" ================================== P R O D U C T =========== R E G I S T R A T I O N ========== B E G A N=====================")
                         return product_id , product_request_id
                     else:
                         logger.info("This amount indicates number of products in the container.")

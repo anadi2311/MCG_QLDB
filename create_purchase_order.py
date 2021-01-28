@@ -41,6 +41,7 @@ def create_purchase_order (transaction_executor, person_id, purchase_order_detai
                             purchase_order_id = insert_documents(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,convert_object_to_ion(purchase_order))
 
                             logger.info("Order was placed sucessfully with id: {}".format(purchase_order_id))
+                            logger.info(" ================================== O R D E R =========== P L A C E D ===============================")
                             return purchase_order_id[0]
                         else:
                             logger.info("OrdererComany is not approved by the Admin.")

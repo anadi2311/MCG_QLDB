@@ -99,6 +99,7 @@ def accept_order(transaction_executor,purchase_order_id,person_id):
                 update_document(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,"Acceptor.isOrderAccepted",purchase_order_id,True)
                 try:
                     next(cursor)
+                    logger.info(" ================================== O R D E R =========== A C C E P T E D ===============================")
                     logger.info("Invoice is updated!")
                 except StopIteration:
                     logger.info("Problem updating invoice")
@@ -113,7 +114,7 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            purchaseorderid = "C1DYY8qp9N8Fx5M1VVNkLl"        
+            purchaseorderid = "8kwcimR7kUkDCfp5xvLDNg"        
             person_id = "ChnkiwR6B4325uiSVdJlyQ"
             driver.execute_lambda(lambda executor: accept_order(executor, purchaseorderid, person_id))
     except Exception:

@@ -46,6 +46,6 @@ if __name__ == '__main__':
                                    create_table(x,Constants.PACKING_LIST_TABLE_NAME)and 
                                    create_table(x,Constants.PRODUCT_TABLE_NAME),
                                    lambda retry_attempt: logger.info('Retrying due to OCC conflict...'))
-            logger.info('Tables created successfully.')
+            logger.info('============== T A B L E S ========= C R E A T E D ==================')
     except Exception:
         logger.exception('Errors creating tables.')

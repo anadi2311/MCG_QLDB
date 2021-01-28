@@ -21,6 +21,7 @@ def decline_request_to_approve_company_or_product(transaction_executor, request_
             try:
                 next(cursor)
                 logger.info("Request successfully Declined and deleted!")
+                logger.info(" ================================== R E Q U E S T =========== D E N I E D ===============================")
             except StopIteration:
                 logger.info("Request couldn't be accepted!")
         else: 

@@ -79,6 +79,6 @@ if __name__ == '__main__':
                                         and create_index(x, Constants.INVOICE_TABLE_NAME,
                                                     Constants.INVOICE_ID_INDEX_NAME),
                                   lambda retry_attempt: logger.info('Retrying due to OCC conflict...'))
-            logger.info('Indexes created successfully.')
+            logger.info(" ================================== I N D E X E S  =========== C R E A T E D ===============================")
     except Exception:
         logger.exception('Unable to create indexes.')

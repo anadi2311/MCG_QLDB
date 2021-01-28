@@ -43,7 +43,7 @@ def wait_for_active(name):
     while True:
         result = qldb_client.describe_ledger(Name=name)
         if result.get('State') == ACTIVE_STATE:
-            logger.info('Success. Ledger is active and ready to use.')
+            logger.info('=============== L E D G E R ======== A C T I V E =================')
             return result
         logger.info('The ledger is still creating. Please wait...')
         sleep(LEDGER_CREATION_POLL_PERIOD_SEC)

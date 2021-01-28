@@ -31,6 +31,7 @@ def approve_joining_request(transaction_executor, request_id):
             scentity_id_code = scentity_id_code[0]
             join_person_to_company(transaction_executor, scentity_id_code, person_id)
             logger.info("Request : {} Accepted".format(request_id))
+            logger.info(" ================================== P E R S O N =========== A D D E D ===============================")
         
     else:
         logger.info("Request doesn't exist.")

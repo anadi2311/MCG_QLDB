@@ -325,6 +325,7 @@ def register_new_user_with_scentity(transaction_executor, person, new_sc_entity)
 
                     sc_entity_id_code = new_sc_entity["ScEntityIdentificationCode"]
                     logger.info('Registration process began for new SCEntity with ScEntityIdentificationCode : {} and ScEntityId: {}. A new request was create for super admin : {}'.format(sc_entity_id_code,sc_entity_id, mcg_request_id))
+                    logger.info(" ================================== P E R S O N =========== R E G I S T R A T I O N ============== I N I T I A T E D=================")
                     return mcg_request_id,sc_entity_id
                 except StopIteration:
                     logger.info('Problem occurred while inserting Scentity, please review the results.')

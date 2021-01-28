@@ -86,7 +86,7 @@ def accept_request_to_approve_company_or_product(transaction_executor, request_i
             cursor = transaction_executor.execute_statement(update_statement, request_id)
             try:
                 next(cursor)
-                logger.info("Request successfully accepted!")
+                logger.info(" =================== R E Q U E S T ==== T O ===== A D M I N =========== A C C E P T E D ==========================")
             except StopIteration:
                 logger.info("Request couldn't be accepted!")
     else:

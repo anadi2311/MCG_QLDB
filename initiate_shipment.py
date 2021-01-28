@@ -1,7 +1,7 @@
 from logging import basicConfig, getLogger, INFO
 from connect_to_ledger import create_qldb_driver
 from amazon.ion.simpleion import dumps, loads
-
+import datetime
 from sampledata.sample_data import convert_object_to_ion, get_value_from_documentid,document_exist,update_document
 from constants import Constants
 from insert_document import insert_documents
@@ -126,7 +126,7 @@ def update_pallete_ids_in_cases(transaction_executor,case_ids,pallete_id):
 def assign_palletes_into_container(transaction_executor,pallete_ids,product_code,purchase_order_id):
     number_of_containers_required = int(len(pallete_ids)/Constants.PALLETS_PER_CONTAINER)
     starting_pallete_number = 0
-    ending_pallete_number = int(Constants.CASES_PER_PALLETE) 
+    ending_pallete_number = int(Constants.PALLETS_PER_CONTAINER) 
     containers = []
     for container in range(1,number_of_containers_required+1):
         s_no = get_index_number(transaction_executor,Constants.CONTAINER_TABLE_NAME,"ContainerNumber")
@@ -134,9 +134,10 @@ def assign_palletes_into_container(transaction_executor,pallete_ids,product_code
         current_pallete_ids = pallete_ids[starting_pallete_number:ending_pallete_number]
         container = {
             "ContainerNumber":container_number,
+            "PurchaseOrderId" : purchase_order_id,
             "PalleteIds": current_pallete_ids,
-            "Purchase_order_id" : purchase_order_id,
-            "isContainerSafeForDelivery" : False,
+            "ContainerSafety" : {"isContainerSafeForDelivery" : False,
+                                 "LastCheckedAt": datetime.datetime.now().timestamp()},
             "PackingListId" : "",
             "LorryReciepts" : [],
             "IotIds" : [],
@@ -227,7 +228,7 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            purchaseorderid = "7ekIwCzMj4e67m6EpYkBpO"        
+            purchaseorderid = "8kwcimR7kUkDCfp5xvLDNg"        
             personid = "ChnkiwR6B4325uiSVdJlyQ"
             carriercompanyid = "4SnOeBWQOaT1PAKykqD9iO"
             driver.execute_lambda(lambda executor: initiate_shipment(executor, carriercompanyid,purchaseorderid, personid))

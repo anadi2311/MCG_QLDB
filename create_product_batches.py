@@ -138,6 +138,7 @@ def create_vaccine_batch(transaction_executor, person_id,product_id,batch):
             ##check if the person_id is authorized to create the product
             if person_authorized_to_create_product(transaction_executor,product_id,person_id):
                 generate_inventory(transaction_executor,product_id,batch)
+                logger.info(" ================================== B A T C H =========== R E G I S T E R E D  ===============================")
             else:
                 logger.info("You don't have authority for this product!")
         else:
