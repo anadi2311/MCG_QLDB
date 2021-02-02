@@ -161,8 +161,8 @@ if __name__ == '__main__':
                 'CaseIds':[]
             }
 
-            person_id = "ChnkiwR6B4325uiSVdJlyQ"
-            product_id = "IyNXobwHOZr1lzgTtHcN5I"
+            person_id = "FS8XQHgWCoY16Tgv8TD3Aa"
+            product_id = "IN7NAEvyfyP6qzlNfD1hJc"
 
             driver.execute_lambda(lambda executor: create_vaccine_batch(executor, person_id,product_id, batch))
     except Exception:

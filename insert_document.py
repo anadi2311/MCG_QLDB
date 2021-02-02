@@ -35,16 +35,11 @@ def update_person_id(document_ids):
     :return: Lists of updated DriversLicense records and updated VehicleRegistration records.
     """
     new_sc_entity = SampleData.SCENTITY.copy()
-    logger.info(new_sc_entity)
-    logger.info(new_sc_entity[0]["PersonIds"])
-    logger.info(document_ids)
-    
     for i in range(len(document_ids)-1):
         new_sc_entity[0]["PersonIds"].append(document_ids[i])
-    
-    logger.info(new_sc_entity)
+    new_sc_entity[1]["PersonIds"].append(document_ids[-1])
+    # logger.info(new_sc_entity)
     return new_sc_entity
-
 
 def insert_documents(transaction_executor, table_name, documents):
     """

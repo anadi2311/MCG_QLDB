@@ -44,7 +44,7 @@ class SampleData:
             'FirstName': 'UBC',
             'LastName': 'CIC',
             'isSuperAdmin' : True,
-            'isAdmin' : False,
+            'isAdmin' : True,
              'PersonContact': {
                 "Email": "UBC.CIC@ubc.ca",
                 'Phone' : "9999999999",
@@ -64,7 +64,21 @@ class SampleData:
             "ScEntityIdentificationCode" : "JXkY1234",    
             "ScEntityIdentificationCodeType" : "BusinessNumber",
             "isApprovedBySuperAdmin": False,
-            "ScentityTypeCode": 2,
+            "ScEntityTypeCode": "2",
+            "PersonIds": [],
+            "JoiningRequests" : [],
+            },
+            {
+            "ScEntityName" : "MCG",
+            "ScEntityContact":{
+                "Email":"MCG@mcg.com",
+                "Address":"123 ABC St, Texas, USA",
+                "Phone": "1234567890"
+            },    
+            "ScEntityIdentificationCode" : "admin1234",    
+            "ScEntityIdentificationCodeType" : "BusinessNumber",
+            "isApprovedBySuperAdmin": True,
+            "ScEntityTypeCode": "1",
             "PersonIds": [],
             "JoiningRequests" : [],
             }
@@ -176,12 +190,17 @@ def print_result(cursor):
     return result_counter
 
 def update_document( transaction_executor, table_name,field_name,document_id,new_value):
-    logger.info(new_value)
-    update_statement = " UPDATE {} AS j BY id SET j.{} = {} WHERE id = ?".format(table_name,field_name,str(new_value))
+    if isinstance(new_value,str) :
+        update_statement = " UPDATE {} AS j BY id SET j.{} = '{}' WHERE id = ?".format(table_name,field_name,str(new_value))
+    else:
+        update_statement = " UPDATE {} AS j BY id SET j.{} = {} WHERE id = ?".format(table_name,field_name,str(new_value))
+    
+    # print(update_statement)
     cursor = transaction_executor.execute_statement(update_statement,document_id)
 
     try:
         next(cursor)
+        logger.info("Updated Successfully!")
     except StopIteration:
-        logger.info("Error updating the document.")
+        logger.info("Error updating the document in {}".format(table_name))
  

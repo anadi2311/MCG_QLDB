@@ -6,7 +6,14 @@ from constants import Constants
 logger = getLogger(__name__)
 basicConfig(level=INFO)
 
-
+def person_is_superadmin(transaction_executor,person_id):
+    is_superadmin = get_value_from_documentid(transaction_executor,Constants.PERSON_TABLE_NAME,person_id,"isSuperAdmin")
+    if is_superadmin == [1]:
+        logger.info("Authorized!")
+        return True
+    else:
+        logger.info('Not Authorized!')
+        return False
 
 def mcg_request_exist(transaction_executor, request_id):
 
@@ -76,19 +83,22 @@ def update_approval_status(transaction_executor,request_id,status):
         except StopIteration:
             logger.info("Status was not updated!")
 
-def accept_request_to_approve_company_or_product(transaction_executor, request_id):
+def accept_request_to_approve_company_or_product(transaction_executor, request_id,person_id):
     if mcg_request_exist(transaction_executor, request_id):
-        if mcg_request_already_approved(transaction_executor, request_id):
-            logger.info("Request is already approved!")
+        if person_is_superadmin(transaction_executor,person_id):
+            if mcg_request_already_approved(transaction_executor, request_id):
+                logger.info("Request is already approved!")
+            else:
+                update_approval_status(transaction_executor,request_id,True)
+                update_statement = " UPDATE {} AS j BY id SET j.isAccepted = true WHERE id = ?".format(Constants.SUPERADMIN_REQUEST_TABLE_NAME)
+                cursor = transaction_executor.execute_statement(update_statement, request_id)
+                try:
+                    next(cursor)
+                    logger.info(" =================== R E Q U E S T ==== T O ===== A D M I N =========== A C C E P T E D ==========================")
+                except StopIteration:
+                    logger.info("Request couldn't be accepted!")
         else:
-            update_approval_status(transaction_executor,request_id,True)
-            update_statement = " UPDATE {} AS j BY id SET j.isAccepted = true WHERE id = ?".format(Constants.SUPERADMIN_REQUEST_TABLE_NAME)
-            cursor = transaction_executor.execute_statement(update_statement, request_id)
-            try:
-                next(cursor)
-                logger.info(" =================== R E Q U E S T ==== T O ===== A D M I N =========== A C C E P T E D ==========================")
-            except StopIteration:
-                logger.info("Request couldn't be accepted!")
+            logger.info("Access denied -- only MCG")
     else:
         logger.info("Any request with request id : {} doesn't exist.".format(request_id))
 
@@ -97,8 +107,9 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            request_id = "It3WIG8bkkx91DnTsI7TUH"        
+            request_id = "1iSbw1VVaG53SJAm4DbZup"
+            person_id = "ISROgaiw3gs5M3WumB8ekS"   
   
-            driver.execute_lambda(lambda executor: accept_request_to_approve_company_or_product(executor,request_id))
+            driver.execute_lambda(lambda executor: accept_request_to_approve_company_or_product(executor,request_id,person_id))
     except Exception:
         logger.exception('Error accepting the request.')

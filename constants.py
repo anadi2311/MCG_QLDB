@@ -15,6 +15,7 @@ class Constants:
     LORRY_RECEIPT_TABLE_NAME = "LorryReciepts"
     PACKING_LIST_TABLE_NAME = "PackingLists"
     AIRWAY_BILL_TABLE_NAME = "AirwayBills"
+    BILL_OF_LADING_TABLE_NAME = "BillOfLadings"
     CONTAINER_TABLE_NAME = "Containers"
     IOT_TABLE_NAME = 'IoTs'
     CASES_TABLE_NAME = 'Cases'
@@ -33,6 +34,7 @@ class Constants:
     CERTIFICATE_OF_ORIGIN_INDEX_NAME = "CertificateOfOriginNumber"
     LORRY_RECEIPT_INDEX_NAME = "LorryReceiptNumber"
     AIRWAY_BILL_INDEX_NAME = "AirwayBillNumber"
+    BILL_OF_LADING_INDEX_NAME = "BillOfLadingNumber"
     CONATINER_INDEX_NAME = "ContainerNumber"
     IOT_INDEX_NAME = "IoTNumber"
     CASES_INDEX_NAME = "CaseNumber"

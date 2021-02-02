@@ -42,7 +42,7 @@ def wait_for_deleted(ledger_name):
             sleep(LEDGER_DELETION_POLL_PERIOD_SEC)
         except qldb_client.exceptions.ResourceNotFoundException:
             logger.info('Success. The ledger is deleted.')
-             logger.info(" ==================== L E D G E R ======== D E L E T E D ===============")
+            logger.info(" ==================== L E D G E R ======== D E L E T E D ===============")
             break
 
 

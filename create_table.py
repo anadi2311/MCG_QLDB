@@ -41,6 +41,7 @@ if __name__ == '__main__':
                                    create_table(x,Constants.CERTIFICATE_OF_ORIGIN_TABLE_NAME) and
                                    create_table(x,Constants.LORRY_RECEIPT_TABLE_NAME) and
                                    create_table(x,Constants.AIRWAY_BILL_TABLE_NAME) and
+                                   create_table(x,Constants.BILL_OF_LADING_TABLE_NAME) and
                                    create_table(x,Constants.PALLETE_TABLE_NAME) and
                                    create_table(x,Constants.CASES_TABLE_NAME) and
                                    create_table(x,Constants.PACKING_LIST_TABLE_NAME)and 

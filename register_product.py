@@ -58,7 +58,7 @@ def register_product(transaction_executor, product,person_id):
                         product_id = result[0]
                         product_request_id = create_mcg_request(transaction_executor,product_id, person_id,2)
                         logger.info("Request was created for product Id : {} with product request id {}".format(product_id, product_request_id))
-                         logger.info(" ================================== P R O D U C T =========== R E G I S T R A T I O N ========== B E G A N=====================")
+                        logger.info(" ================================== P R O D U C T =========== R E G I S T R A T I O N ========== B E G A N=====================")
                         return product_id , product_request_id
                     else:
                         logger.info("This amount indicates number of products in the container.")
@@ -76,7 +76,7 @@ if __name__ == '__main__':
         with create_qldb_driver() as driver:
             new_product = {
             'ProductCode': "00123451000015", #GTIN for Vaccine with NDC National Drug Code
-            'ProductNamee': "Moderna Vaccine",
+            'ProductName': "Moderna Vaccine",
             'ProductPrice': 10,
             'MinimumSellingAmount':100, #minimum selling amount must be one container <<---- this denoted how many vaccines will be available in a container
             'ProductExpiry': 120, #in days
@@ -85,13 +85,14 @@ if __name__ == '__main__':
                 'HighThreshTemp': 10, #in degree Centigrate
                 'HighThreshHumidity': 40 # percentage   
             },
-            'ManufacturerId': "BPxNtfQ0qEx4T2qmDjDQKI", #change this <<<<---------------------------
+            'ProductHSTarriffNumber':'HGJSI123123',#Used for catergorizing products in export
+            'ManufacturerId': "IHnLet7iGMzIYedhYE6LfX", #change this <<<<---------------------------
             'isApprovedBySuperAdmin':False,
             'BatchTableId': ''
             }
 
             # must be passed down as a prop from the react state
-            person_id = "ChnkiwR6B4325uiSVdJlyQ"             #change this <<<<---------------------------
+            person_id = "FS8XQHgWCoY16Tgv8TD3Aa"             #change this <<<<---------------------------
             driver.execute_lambda(lambda executor: register_product(executor, new_product, person_id))
     except Exception:
         logger.exception('Error registering product.')

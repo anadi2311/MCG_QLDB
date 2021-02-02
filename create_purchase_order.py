@@ -56,7 +56,14 @@ def create_purchase_order (transaction_executor, person_id, purchase_order_detai
     else:
         logger.info(" Product Id is wrong!")
     
-   
+
+def get_orderer_id(transaction_executor, purchase_order_id):
+    query = "SELECT t.Orderer.OrdererCompanyId FROM PurchaseOrders as t BY d_id WHERE d_id = ?"
+    cursor_three = transaction_executor.execute_statement(query, purchase_order_id)
+    
+    value = list(map(lambda x: x.get("OrdererCompanyId"), cursor_three))
+    logger.info("Orderer's Id is {}".format(value))
+    return value[0]
 
 if __name__ == '__main__':
 
@@ -64,16 +71,16 @@ if __name__ == '__main__':
         with create_qldb_driver() as driver:
             purchaseorderdetails = {
                 "PurchaseOrderNumber":"",
-                "ProductId":"IyNXobwHOZr1lzgTtHcN5I",
+                "ProductId":"IN7NAEvyfyP6qzlNfD1hJc",
                 "OrderQuantity" : 2, ## <<------- must be in integer and refers to number of containers ordered (In this case total vaccines ordered are 100)
                 "Orderer":{
                     "OrdererCompanyId":"",
                     "OrdererPersonId" :""
                 },
-                "isOrderShipped":False
+                "isOrderShipped":False,
             }
             # must be passed down as a prop from the react state
-            person_id = "ChnkiwR6B4325uiSVdJlyQ"             #change this <<<<---------------------------
+            person_id = "EKwDeiGl2XI2BX2SL9PNDO"             #change this <<<<---------------------------
             driver.execute_lambda(lambda executor: create_purchase_order(executor, person_id,purchaseorderdetails))
     except Exception:
         logger.exception('Error creating order.')

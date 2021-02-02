@@ -72,10 +72,14 @@ if __name__ == '__main__':
                                                     Constants.IOT_INDEX_NAME)
                                         and create_index(x, Constants.AIRWAY_BILL_TABLE_NAME,
                                                     Constants.AIRWAY_BILL_INDEX_NAME)
+                                        and create_index(x,Constants.BILL_OF_LADING_TABLE_NAME,
+                                                    Constants.BILL_OF_LADING_INDEX_NAME)
                                         and create_index(x, Constants.LORRY_RECEIPT_TABLE_NAME,
                                                     Constants.LORRY_RECEIPT_INDEX_NAME)
                                         and create_index(x, Constants.PACKING_LIST_TABLE_NAME,
                                                     Constants.PACKING_LIST_INDEX_NAME)
+                                        and create_index(x,Constants.CERTIFICATE_OF_ORIGIN_TABLE_NAME,
+                                                    Constants.CERTIFICATE_OF_ORIGIN_INDEX_NAME)
                                         and create_index(x, Constants.INVOICE_TABLE_NAME,
                                                     Constants.INVOICE_ID_INDEX_NAME),
                                   lambda retry_attempt: logger.info('Retrying due to OCC conflict...'))

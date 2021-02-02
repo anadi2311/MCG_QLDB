@@ -14,16 +14,9 @@ from constants import Constants
 from register_person import get_index_number
 from insert_document import insert_documents
 from sampledata.sample_data import convert_object_to_ion, get_value_from_documentid,document_exist,update_document
+from accept_requests_for_admin import person_is_superadmin
 
 
-def person_is_superadmin(transaction_executor,person_id):
-    is_superadmin = get_value_from_documentid(transaction_executor,Constants.PERSON_TABLE_NAME,person_id,"isSuperAdmin")
-    if is_superadmin == [1]:
-        logger.info("Authorized!")
-        return True
-    else:
-        logger.info('Not Authorized!')
-        return False
 
 def create_iot(transaction_executor,iot):
     iot_number = get_index_number(transaction_executor,Constants.IOT_TABLE_NAME,"IoTNumber")
@@ -38,11 +31,11 @@ def create_iot(transaction_executor,iot):
 def create_and_assign_iot(transaction_executor, iot,person_id):
     # person_id must be super admin
     if person_is_superadmin(transaction_executor,person_id):
+        container_id = iot["ContainerId"]
         if document_exist(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id):
-            container_id = iot["ContainerId"]
             iot_id = create_iot(transaction_executor,iot)
             statement = "FROM {} AS s by id WHERE id = '{}' INSERT INTO s.IotIds VALUE ?".format(Constants.CONTAINER_TABLE_NAME,container_id)
-            print(statement)
+            # print(statement)
             cursor = transaction_executor.execute_statement(statement,iot_id) 
             try:
                 next(cursor)
@@ -62,14 +55,14 @@ if __name__ == '__main__':
             
             io_t = {
                 "IoTNumber": "",
-                "IoTType": 1, ## 1 for temperatire ---- 2 for Humdity ----------- 3 for location
-                "IoTName":"Temperature Sensor",
-                "ContainerId":"89gS4JpeqiTDDNHFjmHS7Y"
+                "IoTType": 3, ## 1 for temperatire ---- 2 for Humdity ----------- 3 for location
+                "IoTName":"Location Sensor",
+                "ContainerId":"Ad3ACY526Hg8LXV0RxexhO"
             }
-            personid = "5fJjw6jlQzhDfV2di5hY9O"
-            driver.execute_lambda(lambda executor: create_and_assign_iot(executor, io_t,personid)
+            personid = "0007Uwl5XmzEpE7jSQLxpe"
+            driver.execute_lambda(lambda executor: create_and_assign_iot(executor, io_t,personid))
     except Exception:
-        logger.exception('Error accepting the order.')  
+        logger.exception('Error registering IoT.')  
 
 
 

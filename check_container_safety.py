@@ -4,7 +4,7 @@ from amazon.ion.simpleion import dumps, loads
 logger = getLogger(__name__)
 basicConfig(level=INFO)
 
-
+import datetime
 from constants import Constants
 from register_person import get_index_number
 from insert_document import insert_documents
@@ -16,18 +16,14 @@ def get_storage_data(transaction_executor,product_id,data_type):
     statement = "SELECT t.{} FROM {} as t BY d_id WHERE d_id = ?".format("ProductStorage" +"."+data_type,Constants.PRODUCT_TABLE_NAME)
     cursor = transaction_executor.execute_statement(statement,product_id)   
     value = list(map(lambda x: x.get('{}'.format(data_type)), cursor))
-    # for row in cursor:
-    #     value =  dumps(row,binary = False,indent='  ', omit_version_marker=True)
-    # # print(value)
+
     return value[0]
 
 def threshhold_crossed(transaction_executor, iot_id, iot_data):
-    # container_id = get_value_from_documentid(transaction_executor,Constants.IOT_TABLE_NAME,iot_id,"ContainerId")
-    
-    container_id = ["It3WIGyhrB37M6grEKbwr5"]
-    purchase_order_id = get_value_from_documentid(transaction_executor, Constants.CONTAINER_TABLE_NAME,container_id[0],"Purchase_order_id") # change by "PurchaseOrderId"
+    container_id = get_value_from_documentid(transaction_executor,Constants.IOT_TABLE_NAME,iot_id,"ContainerId")
+    purchase_order_id = get_value_from_documentid(transaction_executor, Constants.CONTAINER_TABLE_NAME,container_id[0],"PurchaseOrderId") 
     product_id = get_value_from_documentid(transaction_executor, Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id[0],"ProductId")
-    
+    print(product_id)
     iot_type = get_value_from_documentid(transaction_executor,Constants.IOT_TABLE_NAME,iot_id,"IoTType")
     if iot_type == [1]:
         temp_data = iot_data["Temperature"]
@@ -54,23 +50,25 @@ def isContainerSafe(transaction_executor,container_id):
     statement = "SELECT t.{} FROM {} as t BY d_id WHERE d_id = ?".format("ContainerSafety.isContainerSafeForDelivery",Constants.CONTAINER_TABLE_NAME)
     cursor = transaction_executor.execute_statement(statement,container_id)   
     value = list(map(lambda x: x.get('isContainerSafeForDelivery'), cursor))
-    # for row in cursor:
-    #     value =  dumps(row,binary = False,indent='  ', omit_version_marker=True)
-    # # print(value)
+    print(statement+container_id[0])
+    print("Safe: {}".format(value))
     return value[0]
 
-def container_safe(transaction_executor, iot_id, iot_data):
+
+def check_container_safe(transaction_executor, iot_id, iot_data):
     if document_exist(transaction_executor,Constants.IOT_TABLE_NAME,iot_id):
         logger.info("document_exist!")
         container_id = get_value_from_documentid(transaction_executor,Constants.IOT_TABLE_NAME,iot_id,"ContainerId")
+
         if threshhold_crossed(transaction_executor,iot_id,iot_data):
-            update_document(transaction_executor,Constants.CONTAINER_TABLE_NAME, "ContainerSafety.isContainerSafeForDelivery",container_id,False)
-            update_document(transaction_executor,Constants.CONTAINER_TABLE_NAME, "ContainerSafety.LastCheckedAt",container_id,iot_data["TimeStamp"])
+            update_document(transaction_executor,Constants.CONTAINER_TABLE_NAME, "ContainerSafety.isContainerSafeForDelivery",container_id[0],False)
+            update_document(transaction_executor,Constants.CONTAINER_TABLE_NAME, "ContainerSafety.LastCheckedAt",container_id[0],iot_data["TimeStamp"])
+            logger.info("++++++++++ ===== C O N T A I N E R ===== U N S A F E ======= +++++++++")
             ## mark container unsafe
         else:
-            if isContainerSafe(transaction_executor,container_id):
+            if isContainerSafe(transaction_executor,container_id[0]):
                 logger.info("No problem detected!")
-                update_document(transaction_executor,Constants.CONTAINER_TABLE_NAME, "ContainerSafety.LastCheckedAt",container_id,iot_data["TimeStamp"])
+                update_document(transaction_executor,Constants.CONTAINER_TABLE_NAME, "ContainerSafety.LastCheckedAt",container_id[0],iot_data["TimeStamp"])
             else:
                 logger.info("ALARM!!! CONTAINER WAS ALREADY MARKED UNSAFE!!")
             ## check if the container is safe 
@@ -84,12 +82,12 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            iotid = "HrBE23VszDF4VANn8w2NCu"
+            iotid = "4o5UieeBT7HFH4OwuXKNZt"
             iotdata = {
-                "TimeStamp":datetime.datetime.now().timestamp()} ## epoch time
-                "Temperature": 50
+                "TimeStamp":datetime.datetime.now().timestamp(), ## epoch time
+                "Temperature": 5
                 # "Humdity":50
             }
-            driver.execute_lambda(lambda executor: container_safe(executor, iotid,iotdata))
+            driver.execute_lambda(lambda executor: check_container_safe(executor, iotid,iotdata))
     except Exception:
         logger.exception('Error.')  
