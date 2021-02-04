@@ -32,9 +32,8 @@ def approve_joining_request(transaction_executor, request_id,person_id):
                 
                 person_id = get_value_from_documentid(transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, request_id, 'SenderPersonId')
                 person_id = person_id[0]
-                scentity_id_code = get_value_from_documentid(transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, request_id, 'ScEntityIdentificationCode')
-                scentity_id_code = scentity_id_code[0]
-                join_person_to_company(transaction_executor, scentity_id_code, person_id)
+                scentity_id = get_value_from_documentid(transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, request_id, 'ScEntityId')
+                join_person_to_company(transaction_executor, scentity_id[0], person_id)
                 logger.info("Request : {} Accepted".format(request_id))
                 logger.info(" ================================== P E R S O N =========== A D D E D ===============================")
         else:
@@ -44,15 +43,15 @@ def approve_joining_request(transaction_executor, request_id,person_id):
    
     
      
-def join_person_to_company(transaction_executor, scentity_id_code, person_id):
+def join_person_to_company(transaction_executor, scentity_id, person_id):
         
-    statement = 'FROM SCEntities AS s WHERE s.ScEntityIdentificationCode = ? INSERT INTO s.PersonIds VALUE ?'
-    cursor_two = transaction_executor.execute_statement(statement, scentity_id_code, person_id)
+    statement = 'FROM SCEntities AS s By id WHERE id = ? INSERT INTO s.PersonIds VALUE ?'
+    cursor_two = transaction_executor.execute_statement(statement, scentity_id, person_id)
     
     try:
         next(cursor_two)
         logger.info("Person Joined to the SCentity")
-    except:
+    except StopIteration:
         logger.info("Person can't join.")
     
 def request_exists(transaction_executor, request_id):
@@ -73,9 +72,11 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            requestid = "L7S9rUcCMO1G48KZ0e2Aks" 
-            personid = "C6Xa4ZRJFzgARB3HkHqCeF"       
+            requestid = "GjyuFfPptqRGdcvpkB0e5G" 
+            personid = "ElYLFZylZJnBNGPia4VoDv"       
   
             driver.execute_lambda(lambda executor: approve_joining_request(executor,requestid,personid))
     except Exception:
         logger.exception('Error accepting the request.')
+
+

@@ -35,7 +35,7 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            request_id = "0LIDa4UWi8a7aqXtwhBYPE"        
+            request_id = "JJfeuCkMfzV1OUCXtljst5"        
   
             driver.execute_lambda(lambda executor: decline_request_to_approve_company_or_product(executor,request_id))
     except Exception:

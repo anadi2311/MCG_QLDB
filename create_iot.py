@@ -21,6 +21,17 @@ from accept_requests_for_admin import person_is_superadmin
 def create_iot(transaction_executor,iot):
     iot_number = get_index_number(transaction_executor,Constants.IOT_TABLE_NAME,"IoTNumber")
     iot.update({"IoTNumber": iot_number})
+    iot_type = iot['IoTType']
+    if iot_type ==1:
+        iot_name = "Temperature Sensor"
+    elif iot_type == 2:
+        iot_name = "Humidity Sensor"
+    elif iot_type == 3:
+        iot_name = "Location Sensor"
+    else:
+        iot_name = "UnkownSensor"
+    
+    iot.update({"IoTName":iot_name})
     logger.info("iot_number is :{}".format(iot_number))
     iot_id = insert_documents(transaction_executor,Constants.IOT_TABLE_NAME, [iot])
     print(iot_id)
@@ -57,9 +68,9 @@ if __name__ == '__main__':
                 "IoTNumber": "",
                 "IoTType": 3, ## 1 for temperatire ---- 2 for Humdity ----------- 3 for location
                 "IoTName":"Location Sensor",
-                "ContainerId":"Ad3ACY526Hg8LXV0RxexhO"
+                "ContainerId":"4NTN71QJWSxHLTbRrmoLRf"
             }
-            personid = "0007Uwl5XmzEpE7jSQLxpe"
+            personid = "9MCnNPlg1vVFKrbFguGHQo"
             driver.execute_lambda(lambda executor: create_and_assign_iot(executor, io_t,personid))
     except Exception:
         logger.exception('Error registering IoT.')  

@@ -107,9 +107,14 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            request_id = "1iSbw1VVaG53SJAm4DbZup"
-            person_id = "ISROgaiw3gs5M3WumB8ekS"   
+            # request_id_1 = "L288LFSrM03KIGDjEtCmJM"
+            # request_id_1 = "KrU5IXrW2VF2F2tRIqCzBF"
+            # request_id_1 = "GZKrCxntHIAHpEnf7q2Os9"
+            # request_id_1 = "C1DYYKLFPWoAeG4d9YAKs8"
+            # request_id_1 = "8KKV7CtKQHHJ2pGbADpuUz"
+            request_id_1 = "Chnkj9WA0gcJTgNaseH0ny"
+            person_id = "3WF7tW1LGVk7g15sUVOtfk"   
   
-            driver.execute_lambda(lambda executor: accept_request_to_approve_company_or_product(executor,request_id,person_id))
+            driver.execute_lambda(lambda executor: accept_request_to_approve_company_or_product(executor,request_id_1,person_id)                                                                               )
     except Exception:
         logger.exception('Error accepting the request.')

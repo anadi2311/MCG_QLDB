@@ -6,7 +6,7 @@ basicConfig(level=INFO)
 
 import datetime
 from constants import Constants
-from register_person import get_index_number,get_scentityid_from_personid,get_scentity_contact
+from register_person import get_index_number,get_scentityid_from_personid,get_scentity_contact,get_document_superadmin_approval_status
 from insert_document import insert_documents
 from sampledata.sample_data import convert_object_to_ion, get_value_from_documentid,document_exist,update_document
 
@@ -117,32 +117,49 @@ def update_document_in_container(transaction_executor,container_id,document_type
 
 # pick_up container requested by carrier ---> for every container that order entails
 def pick_up_order(transaction_executor,purchase_order_id,truck_carrier_person_id, freight_carrier_id, export_location_id,import_location_id):
-    container_ids = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"ContainerIds")
+    container_ids = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"HighestPackagingLevelIds")
     carrier_company_id = get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_ids[0][0],"CarrierCompanyId")
 
     actual_sc_entity_id = get_scentityid_from_personid(transaction_executor,truck_carrier_person_id)
 
     if carrier_company_id[0]== actual_sc_entity_id:
-        logger.info("Authorized!")
-        product_id = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"ProductId")
-        product_id = product_id[0]
-        manufacturer_id = get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME,product_id,"ManufacturerId")
-        manufacturer_name = get_value_from_documentid(transaction_executor,Constants.SCENTITY_TABLE_NAME,manufacturer_id[0],"ScEntityName")
-        pick_up_location = get_scentity_contact(transaction_executor,manufacturer_id[0],"Address")
-        delivery_location = get_scentity_contact(transaction_executor,export_location_id,"Address")
-        logger.info("Pickup location is : {}".format(pick_up_location))
-        for container_id in container_ids[0]:
-            lorry_reciept_id = create_lorry_reciept(transaction_executor,actual_sc_entity_id,truck_carrier_person_id,pick_up_location[0],delivery_location[0],manufacturer_id,manufacturer_name,True)
-            update_document_in_container(transaction_executor,container_id,"LorryRecieptIds",lorry_reciept_id[0])
-            export_location_type = get_value_from_documentid(transaction_executor,Constants.SCENTITY_TABLE_NAME,export_location_id,"ScEntityTypeCode")##
-            if export_location_type == ['3']:
-                airway_bill_id = create_airway_bill(transaction_executor,manufacturer_id,actual_sc_entity_id, container_id, freight_carrier_id,export_location_id,import_location_id)
-                update_document_in_container(transaction_executor,container_id,"AirwayBillIds",airway_bill_id[0])
-            elif export_location_type == ['4']:
-                bill_of_lading_id = create_bill_of_lading(transaction_executor,manufacturer_id,actual_sc_entity_id, container_id,freight_carrier_id,export_location_id,import_location_id)
-                update_document_in_container(transaction_executor,container_id,"BillOfLadingIds",bill_of_lading_id[0])
 
-        logger.info("=====================  O R D E R ====== P I C K E D ===================")
+        location_ids = [export_location_id,import_location_id]
+        scentity_type_code = list(map(lambda x: get_value_from_documentid(transaction_executor,Constants.SCENTITY_TABLE_NAME,x,"ScEntityTypeCode"),location_ids))
+
+        # print(scentity_type_code)
+        if ["3"] not in scentity_type_code[0] and ["4"] not in scentity_type_code[0] and scentity_type_code[0][0] != scentity_type_code[1][0]:
+            raise Exception("import and export locations  can only be airports or sea ports")
+        else:
+            logger.info("Authorized!")
+
+            if get_document_superadmin_approval_status(transaction_executor,Constants.SCENTITY_TABLE_NAME,freight_carrier_id):
+                product_id = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"ProductId")
+                product_id = product_id[0]
+                manufacturer_id = get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME,product_id,"ManufacturerId")
+                manufacturer_name = get_value_from_documentid(transaction_executor,Constants.SCENTITY_TABLE_NAME,manufacturer_id[0],"ScEntityName")
+                pick_up_location = get_scentity_contact(transaction_executor,manufacturer_id[0],"Address")
+                delivery_location = get_scentity_contact(transaction_executor,export_location_id,"Address")
+                logger.info("Pickup location is : {}".format(pick_up_location))
+                for container_id in container_ids[0]:
+                    exisiting_LR = get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"LorryRecieptIds")
+                    print((exisiting_LR[0]))
+                    if len(exisiting_LR[0]) == 0:
+                        lorry_reciept_id = create_lorry_reciept(transaction_executor,actual_sc_entity_id,truck_carrier_person_id,pick_up_location[0],delivery_location[0],manufacturer_id[0],manufacturer_name[0],True)
+                        update_document_in_container(transaction_executor,container_id,"LorryRecieptIds",lorry_reciept_id[0])
+                        export_location_type = get_value_from_documentid(transaction_executor,Constants.SCENTITY_TABLE_NAME,export_location_id,"ScEntityTypeCode")##
+                        if export_location_type == ['3']:
+                            airway_bill_id = create_airway_bill(transaction_executor,manufacturer_id[0],actual_sc_entity_id, container_id, freight_carrier_id,export_location_id,import_location_id)
+                            update_document_in_container(transaction_executor,container_id,"AirwayBillIds",airway_bill_id[0])
+                        elif export_location_type == ['4']:
+                            bill_of_lading_id = create_bill_of_lading(transaction_executor,manufacturer_id[0],actual_sc_entity_id, container_id,freight_carrier_id,export_location_id,import_location_id)
+                            update_document_in_container(transaction_executor,container_id,"BillOfLadingIds",bill_of_lading_id[0])
+                    else:
+                        raise Exception("Order Already Picked!")
+
+                logger.info("=====================  O R D E R ====== P I C K E D ===================")
+            else:
+                logger.info("Carrier Company is not approved.")
     else:
         logger.info("Person not authorized for the pickup")
 
@@ -156,11 +173,11 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
 
-            purchaseorderid = 'InjUlzwdM0iFFLICMJzj3o'
-            truckcarrierpersonid = 'C6Xa4ZRJFzgARB3HkHqCeF'
-            freightcarrierid = '' # id of the carrier that will take container to destination country --> can be same as truck carrier or different
-            exportairportid = '543ZHjkBjfD4tKAuqa8mAV'
-            importairportid =  '5EhcKRLYmsn9Ax7ITlhBs5'
+            purchaseorderid = 'Au1ElllTmwNAh3XlcO7iRl'
+            truckcarrierpersonid ='ElYLFZylZJnBNGPia4VoDv'
+            freightcarrierid = 'GddsjJbYqiT2xJUMt7urvE' # id of the carrier that will take container to destination country --> can be same as truck carrier or different
+            exportairportid = 'FnQeVnapyPO4WWC1LJuzhD'
+            importairportid =  '60bq1iGAcH7HD4fssezHua'
             driver.execute_lambda(lambda executor: pick_up_order(executor, purchaseorderid,truckcarrierpersonid,freightcarrierid,exportairportid,importairportid))
     except Exception:
         logger.exception('Error.')  

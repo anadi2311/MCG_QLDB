@@ -97,6 +97,7 @@ def accept_order(transaction_executor,purchase_order_id,person_id):
                 cursor = transaction_executor.execute_statement(update_statement,purchase_order_id)
 
                 update_document(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,"Acceptor.isOrderAccepted",purchase_order_id,True)
+                update_document(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,"Acceptor.ApprovingPersonId",purchase_order_id,person_id)
                 try:
                     next(cursor)
                     logger.info(" ================================== O R D E R =========== A C C E P T E D ===============================")
@@ -114,8 +115,8 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            purchaseorderid = "Au1ElhG7Y8oK8VBXMjg1Eo"        
-            person_id = "FS8XQHgWCoY16Tgv8TD3Aa"
+            purchaseorderid = "Au1ElllTmwNAh3XlcO7iRl"        
+            person_id = "K5ZrbNdSg0Q5G4Ck3igScr"
             driver.execute_lambda(lambda executor: accept_order(executor, purchaseorderid, person_id))
     except Exception:
         logger.exception('Error accepting the order.')  

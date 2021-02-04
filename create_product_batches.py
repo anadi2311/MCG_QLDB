@@ -1,14 +1,14 @@
 from logging import basicConfig, getLogger, INFO
 from datetime import datetime
 from connect_to_ledger import create_qldb_driver
-from sampledata.sample_data import get_document_ids, print_result
+# from sampledata.sample_data import get_document_ids, print_result
 from constants import Constants
 
 
 from sampledata.sample_data import convert_object_to_ion, get_value_from_documentid
 from create_index import create_index
 from insert_document import insert_documents
-from register_person import get_scentityid_from_personid, get_document_approval_status, get_index_number
+from register_person import get_scentityid_from_personid, get_document_superadmin_approval_status, get_index_number
 
 
 logger = getLogger(__name__)
@@ -161,8 +161,8 @@ if __name__ == '__main__':
                 'CaseIds':[]
             }
 
-            person_id = "FS8XQHgWCoY16Tgv8TD3Aa"
-            product_id = "IN7NAEvyfyP6qzlNfD1hJc"
+            person_id = "K5ZrbNdSg0Q5G4Ck3igScr"
+            product_id = "60bq1j1hcbq2nAZWKyWAbX"
 
             driver.execute_lambda(lambda executor: create_vaccine_batch(executor, person_id,product_id, batch))
     except Exception:

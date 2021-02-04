@@ -5,7 +5,7 @@ import datetime
 from sampledata.sample_data import convert_object_to_ion, get_value_from_documentid,document_exist,update_document
 from constants import Constants
 from insert_document import insert_documents
-from register_person import get_scentityid_from_personid,get_index_number,get_document_approval_status,get_scentity_contact
+from register_person import get_scentityid_from_personid,get_index_number,get_document_superadmin_approval_status,get_scentity_contact
 from create_product_batches import get_tableName_from_tableId,batch_table_exist
 from accept_purchase_order import order_already_accepted
 import ast
@@ -134,12 +134,12 @@ def create_certificate_of_origin(transaction_executor,product_id):
 
     certificate_of_origin = {
         'CertificateOfOriginNumber':get_index_number(transaction_executor,Constants.CERTIFICATE_OF_ORIGIN_TABLE_NAME,"CertificateOfOriginNumber"),
-        'ProductName':product_name,
+        'ProductName':product_name[0],
         'Productid':product_id,
         'ProductHSTarriffNumber':product_hs_tarriff[0],
-        'ManufacturerId':manufacturer_id,
-        'ManufacturerName':manufacturer_name,
-        'ManufacturerLocation':get_scentity_contact(transaction_executor,manufacturer_id,"Address"),
+        'ManufacturerId':manufacturer_id[0],
+        'ManufacturerName':manufacturer_name[0],
+        'ManufacturerLocation':get_scentity_contact(transaction_executor,manufacturer_id[0],"Address")[0],
         'ExportApproval':{
             "ApproverId":"",
             "isApprovedByCustoms":False},
@@ -155,6 +155,7 @@ def create_certificate_of_origin(transaction_executor,product_id):
 
 def create_packing_list(transaction_executor, product_quantity,product_code,palleteIds):
         container_case_ids = []
+        # print("pallete ids are : {}".format(palleteIds))
         for palleteId in palleteIds:
             pallete_case_ids = get_value_from_documentid(transaction_executor,Constants.PALLETE_TABLE_NAME,palleteId,"CaseIds")
             container_case_ids.append(pallete_case_ids[0])
@@ -164,7 +165,7 @@ def create_packing_list(transaction_executor, product_quantity,product_code,pall
             "NumberOfPalletes":Constants.PALLETS_PER_CONTAINER,
             "PalleteIds":palleteIds,
             "NumberofCases":Constants.PALLETS_PER_CONTAINER*Constants.CASES_PER_PALLETE,
-            "CasesIds": container_case_ids[0],
+            "CasesIds": container_case_ids,
             "ProductCode": product_code[0],
             "ProductQuantity" : product_quantity[0],
             "ExportApproval":{
@@ -232,7 +233,7 @@ def update_container_ids_in_palletes(transaction_executor,pallete_ids,container_
 
 
 def update_container_ids_in_purchase_order(transaction_executor,container_ids,purchase_order_id):
-    update_document(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,"ContainerIds",purchase_order_id,container_ids)
+    update_document(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,"HighestPackagingLevelIds",purchase_order_id,container_ids)
     logger.info("Successfully updated conatiner ids in purchase order")
 
 def enough_inventory_registered_for_order(transaction_executor, products_per_case,purchase_order_id, batch_table_name):
@@ -254,7 +255,7 @@ def enough_inventory_registered_for_order(transaction_executor, products_per_cas
         return False
 
 def shipment_already_started(transaction_executor,purchase_order_id):
-    container_ids = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"ContainerIds")
+    container_ids = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"HighestPackagingLevelIds")
 
     if len(container_ids[0])>0:
         logger.info("Shipment already began. Following container ids were : {}".format(container_ids))
@@ -266,7 +267,7 @@ def shipment_already_started(transaction_executor,purchase_order_id):
 def initiate_shipment(transaction_executor, carrier_company_id, transport_type,purchase_order_id,person_id):
     if document_exist(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id):
         logger.info("Purchase Order Found!")
-        if get_document_approval_status(transaction_executor,Constants.SCENTITY_TABLE_NAME,carrier_company_id):
+        if get_document_superadmin_approval_status(transaction_executor,Constants.SCENTITY_TABLE_NAME,carrier_company_id):
             product_id = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"ProductId")
             product_id = product_id[0]
             manufacturer_id = get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME,product_id,"ManufacturerId")
@@ -294,7 +295,7 @@ def initiate_shipment(transaction_executor, carrier_company_id, transport_type,p
                                 product_quantity = get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME,product_id,"MinimumSellingAmount")
                                 container_ids = assign_palletes_into_container(transaction_executor,pallete_ids,product_code,purchase_order_id,carrier_company_id,certificate_of_origin_id[0],product_quantity,transport_type)
                                 update_container_ids_in_purchase_order(transaction_executor,container_ids,purchase_order_id)
-
+            
                                 logger.info("===================== S H I P M E N T ======= I N I T I A T E D =======================")
                             else:
                                 logger.info(" First produce and register the vaccines into the sytem before shipping them")
@@ -314,10 +315,10 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            purchaseorderid = "Au1ElhG7Y8oK8VBXMjg1Eo"        
-            personid = "FS8XQHgWCoY16Tgv8TD3Aa"
-            carriercompanyid = "Jpbn2DXq18I6ggNj8AjbMB"
-            transporttype = 1,
+            purchaseorderid = "Au1ElllTmwNAh3XlcO7iRl"        
+            personid = "K5ZrbNdSg0Q5G4Ck3igScr"
+            carriercompanyid = "GddsjJbYqiT2xJUMt7urvE"
+            transporttype = 1, 
             driver.execute_lambda(lambda executor: initiate_shipment(executor, carriercompanyid,transporttype,purchaseorderid, personid))
     except Exception:
         logger.exception('Error accepting the order.')  

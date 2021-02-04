@@ -50,7 +50,7 @@ def isContainerSafe(transaction_executor,container_id):
     statement = "SELECT t.{} FROM {} as t BY d_id WHERE d_id = ?".format("ContainerSafety.isContainerSafeForDelivery",Constants.CONTAINER_TABLE_NAME)
     cursor = transaction_executor.execute_statement(statement,container_id)   
     value = list(map(lambda x: x.get('isContainerSafeForDelivery'), cursor))
-    print(statement+container_id[0])
+    # print(statement+container_id[0])
     print("Safe: {}".format(value))
     return value[0]
 

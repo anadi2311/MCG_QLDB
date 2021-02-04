@@ -20,22 +20,23 @@ def request_to_change_pickup(transaction_executor, purchase_order_id,buyer_perso
         actual_sc_entity_id = get_scentityid_from_personid (transaction_executor,buyer_person_id)
         
         if actual_sc_entity_id == orderer_id:
-            container_ids = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"ContainerIds")
+            container_ids = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"HighestPackagingLevelIds")
             
             for container_id in container_ids[0]: 
                 transport_type = get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"TransportType")
-                if transport_type == 1:
-                    airway_bills = get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"AirwayBillIds")
-                    update_document(transaction_executor,Constants.AIRWAY_BILL_TABLE_NAME,"RecieverScEntityId",airway_bills[-1][0],new_truck_carrier_id)
-                    pick_up_location = get_value_from_documentid(transaction_executor,Constants.AIRWAY_BILL_TABLE_NAME,airway_bills[-1][0],"ImportAirportName") 
-                else:
-                    bill_of_lading = get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"BillOfLadingIds")
-                    update_document(transaction_executor,Constants.BILL_OF_LADING_TABLE_NAME,"RecieverScEntityId",bill_of_lading[-1][0],new_truck_carrier_id)
-                    pick_up_location = get_value_from_documentid(transaction_executor,Constants.BILL_OF_LADING_TABLE_NAME,bill_of_lading[-1][0],"ImportPortName")
-                delivery_location = get_scentity_contact(transaction_executor,actual_sc_entity_id[0],"Address")
-                consignee_name = get_value_from_documentid(transaction_executor,Constants.SCENTITY_TABLE_NAME,actual_sc_entity_id,"ScEntityName")
-                lorry_reciept_id = create_lorry_reciept(transaction_executor,new_truck_carrier_id,"",pick_up_location, delivery_location,actual_sc_entity_id,consignee_name,False)
-                update_document_in_container(transaction_executor,container_id,"LorryRecieptIds",lorry_reciept_id[0])
+                print(transport_type)
+                # if transport_type == 1:
+                #     airway_bills = get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"AirwayBillIds")
+                #     update_document(transaction_executor,Constants.AIRWAY_BILL_TABLE_NAME,"RecieverScEntityId",airway_bills[0][-1],new_truck_carrier_id)
+                #     pick_up_location = get_value_from_documentid(transaction_executor,Constants.AIRWAY_BILL_TABLE_NAME,airway_bills[0][-1],"ImportAirportName") 
+                # else:
+                #     bill_of_lading = get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"BillOfLadingIds")
+                #     update_document(transaction_executor,Constants.BILL_OF_LADING_TABLE_NAME,"RecieverScEntityId",bill_of_lading[0][-1],new_truck_carrier_id)
+                #     pick_up_location = get_value_from_documentid(transaction_executor,Constants.BILL_OF_LADING_TABLE_NAME,bill_of_lading[0][-1],"ImportPortName")
+                # delivery_location = get_scentity_contact(transaction_executor,actual_sc_entity_id[0],"Address")
+                # consignee_name = get_value_from_documentid(transaction_executor,Constants.SCENTITY_TABLE_NAME,actual_sc_entity_id,"ScEntityName")
+                # lorry_reciept_id = create_lorry_reciept(transaction_executor,new_truck_carrier_id,"",pick_up_location, delivery_location,actual_sc_entity_id,consignee_name,False)
+                # update_document_in_container(transaction_executor,container_id,"LorryRecieptIds",lorry_reciept_id[0])
         else:
             logger.info("Not Authorized!!")
     else:

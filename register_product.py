@@ -7,7 +7,7 @@ from constants import Constants
 
 from sampledata.sample_data import convert_object_to_ion
 from insert_document import insert_documents
-from register_person import get_scentityid_from_personid, create_mcg_request, get_document_approval_status
+from register_person import get_scentityid_from_personid, create_mcg_request, get_document_superadmin_approval_status
 
 logger = getLogger(__name__)
 basicConfig(level=INFO)
@@ -47,7 +47,7 @@ def register_product(transaction_executor, product,person_id):
         actual_scentity_id = get_scentityid_from_personid(transaction_executor,person_id)
         if actual_scentity_id == scentity_id:
             logger.info("Matched for authorization!")
-            if get_document_approval_status(transaction_executor,Constants.SCENTITY_TABLE_NAME,scentity_id):
+            if get_document_superadmin_approval_status(transaction_executor,Constants.SCENTITY_TABLE_NAME,scentity_id):
                 logger.info("Entity is Approved to register product!")
                 ProductCode = product["ProductCode"]
                 if product_exist(transaction_executor, ProductCode):
@@ -86,13 +86,13 @@ if __name__ == '__main__':
                 'HighThreshHumidity': 40 # percentage   
             },
             'ProductHSTarriffNumber':'HGJSI123123',#Used for catergorizing products in export
-            'ManufacturerId': "IHnLet7iGMzIYedhYE6LfX", #change this <<<<---------------------------
+            'ManufacturerId': "3bZ9PrpL1bv1hNfGhfybA2", #change this <<<<---------------------------
             'isApprovedBySuperAdmin':False,
             'BatchTableId': ''
             }
 
             # must be passed down as a prop from the react state
-            person_id = "FS8XQHgWCoY16Tgv8TD3Aa"             #change this <<<<---------------------------
+            person_id = "K5ZrbNdSg0Q5G4Ck3igScr"             #change this <<<<---------------------------
             driver.execute_lambda(lambda executor: register_product(executor, new_product, person_id))
     except Exception:
         logger.exception('Error registering product.')

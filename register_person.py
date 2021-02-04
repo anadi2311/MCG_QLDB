@@ -115,7 +115,7 @@ def lookup_scentity(transaction_executor, new_sc_entity):
 def create_req_to_join_scentity(transaction_executor, sc_entity, employee_id, person_id):
     request_number = get_index_number(transaction_executor,Constants.JOINING_REQUEST_TABLE_NAME,Constants.JOINING_REQUESTID_INDEX_NAME)
     sc_entity_identification_code = sc_entity['ScEntityIdentificationCode']
-    sc_entity_id = get_document_ids(transaction_executor,Constants.SCENTITY_TABLE_NAME,"ScEntityIdentificationCode",sc_entity_identification_code)
+    sc_entity_id = next(get_document_ids(transaction_executor,Constants.SCENTITY_TABLE_NAME,"ScEntityIdentificationCode",sc_entity_identification_code))
     request = {
         "JoiningRequestNumber":request_number,
         "SenderEmployeeId": employee_id,
@@ -123,6 +123,7 @@ def create_req_to_join_scentity(transaction_executor, sc_entity, employee_id, pe
         "ScEntityId": sc_entity_id,
         "isAccepted":False
     }
+    print(request)
     
     result = insert_documents( transaction_executor, Constants.JOINING_REQUEST_TABLE_NAME, [request])
     return result[0]
@@ -218,7 +219,7 @@ def create_mcg_request(transaction_executor,document_id,person_id, request_type)
         request_id = result[0]
         return request_id
 
-def get_document_approval_status(transaction_executor, table_name, document_id):
+def get_document_superadmin_approval_status(transaction_executor, table_name, document_id):
     
     statement = 'SELECT s.isApprovedBySuperAdmin FROM {} as s by id where id = ?'.format(table_name)
     cursor = transaction_executor.execute_statement(statement, document_id)
@@ -226,19 +227,18 @@ def get_document_approval_status(transaction_executor, table_name, document_id):
     
     logger.info("approval status : {}".format(approval_status))
 
-    if approval_status == [0]:
-        logger.info(" not approved")
-        return False
-    else:
-        logger.info("approved")
+    if approval_status == [1]:
+        logger.info(" MCG approved")
         return True
+    else:
+        logger.info("Not approved")
+        return False
 
 def get_scentity_contact(transaction_executor,scentity_id,contact_field):
     statement = "SELECT t.{} FROM {} as t BY d_id WHERE d_id = ?".format("ScEntityContact."+contact_field,Constants.SCENTITY_TABLE_NAME)
     cursor = transaction_executor.execute_statement(statement,scentity_id)   
-    value = list(map(lambda x: x.get('Address'), cursor))
-    # value = dumps(value,binary=False)
-    # print(value)
+    value = list(map(lambda x: x.get('{}'.format(contact_field)), cursor))
+
     return value
 
 ## check if request is sent to super admin for approval of product code for that GTIN
@@ -267,7 +267,7 @@ def register_new_user_with_scentity(transaction_executor, person, new_sc_entity)
             scentity_id_code = new_sc_entity['ScEntityIdentificationCode']
             scentity_id = next(get_document_ids(transaction_executor,Constants.SCENTITY_TABLE_NAME,'ScEntityIdentificationCode',scentity_id_code))
 
-            if get_document_approval_status(transaction_executor,Constants.SCENTITY_TABLE_NAME, scentity_id):
+            if get_document_superadmin_approval_status(transaction_executor,Constants.SCENTITY_TABLE_NAME, scentity_id):
                 if req_already_sent(transaction_executor, person_id) == True :
                     logger.info("Please wait for your company admin to approve the request.")
                 else:
@@ -290,8 +290,6 @@ def register_new_user_with_scentity(transaction_executor, person, new_sc_entity)
                     mcg_request_id = create_mcg_request(transaction_executor,sc_entity_id,person_id, 1)
 
                     sc_entity_id_code = new_sc_entity["ScEntityIdentificationCode"]
-                    value = get_scentity_contact(transaction_executor,sc_entity_id,"Address")
-                    print(value)
                     logger.info('Registration process began for new SCEntity with ScEntityIdentificationCode : {} and ScEntityId: {}. A new request was create for super admin : {}'.format(sc_entity_id_code,sc_entity_id, mcg_request_id))
                     logger.info(" ================================== P E R S O N =========== R E G I S T R A T I O N ============== I N I T I A T E D=================")
                     return mcg_request_id,sc_entity_id
@@ -306,7 +304,7 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            # new_person = {
+            # new_person_1 = {
             # 'EmployeeId': 'BOB123',
             # 'FirstName': 'Bob',
             # 'LastName': 'Doe',
@@ -318,7 +316,7 @@ if __name__ == '__main__':
             #     'Address': 'FirstNewUser'
             #  }}
 
-            # new_sc_entity = {
+            # new_sc_entity_1 = {
             # "ScEntityName" : " BuyerCompanyC",
             # "ScEntityContact":{
             #     "Email":"moderna@moderna.com",
@@ -334,7 +332,7 @@ if __name__ == '__main__':
             # }
             
 
-            # new_person = {
+            # new_person_2 = {
             # 'EmployeeId': 'MAN123',
             # 'FirstName': 'MAN',
             # 'LastName': 'DOE',
@@ -346,7 +344,7 @@ if __name__ == '__main__':
             #         'Address': 'FirstNewUser'
             #  }}
     
-            # new_sc_entity = {
+            # new_sc_entity_2 = {
             # "ScEntityName" : " Moderna",
             # "ScEntityContact":{
             #     "Email":"moderna@moderna.com",
@@ -361,7 +359,7 @@ if __name__ == '__main__':
             # "ScEntityIdentificationCodeType" : "BusinessNumber"               
             # }
 
-            # new_person = {
+            # new_person_3 = {
             # 'EmployeeId': 'FAN123',
             # 'FirstName': 'FAN',
             # 'LastName': 'DOE',
@@ -375,22 +373,22 @@ if __name__ == '__main__':
             
 
 
-            new_sc_entity = {
-            "ScEntityName" : " FEDX",
-            "ScEntityContact":{
-                "Email":"FEDx@FEDx.com",
-                "Address":"345 DEF St, ON, CAN",
-                "Phone": "1234567890"
-            },
-            "isApprovedBySuperAdmin": True,
-            "ScEntityTypeCode": "2",
-            "PersonIds": [],
-            "JoiningRequests" : [],
-            "ScEntityIdentificationCode" : "COOODDO1234",    #<<--------must be checked from a govt. available data source
-            "ScEntityIdentificationCodeType" : "BusinessNumber"               
-            }            
+            # new_sc_entity_3 = {
+            # "ScEntityName" : " FEDX",
+            # "ScEntityContact":{
+            #     "Email":"FEDx@FEDx.com",
+            #     "Address":"345 DEF St, ON, CAN",
+            #     "Phone": "1234567890"
+            # },
+            # "isApprovedBySuperAdmin": True,
+            # "ScEntityTypeCode": "2",
+            # "PersonIds": [],
+            # "JoiningRequests" : [],
+            # "ScEntityIdentificationCode" : "COOODDO1234",    #<<--------must be checked from a govt. available data source
+            # "ScEntityIdentificationCodeType" : "BusinessNumber"               
+            # }            
       
-            # new_person = {
+            # new_person_4 = {
             # 'EmployeeId': 'CustomAgent123',
             # 'FirstName': 'ExportCustom',
             # 'LastName': 'DOE',
@@ -402,7 +400,7 @@ if __name__ == '__main__':
             #         'Address': 'FirstNewUser'
             #  }}
 
-            # new_sc_entity = {
+            # new_sc_entity_4 = {
             # "ScEntityName" : "TexasAirport",
             # "ScEntityContact":{
             #     "Email":"Tsairport@airport.com",
@@ -417,7 +415,7 @@ if __name__ == '__main__':
             # "ScEntityIdentificationCodeType" : "IATACode"               
             # }   
 
-            # new_person = {
+            # new_person_5 = {
             # 'EmployeeId': 'ImpotCustomAgent123',
             # 'FirstName': 'ImportCustom',
             # 'LastName': 'DOE',
@@ -429,7 +427,7 @@ if __name__ == '__main__':
             #         'Address': 'FirstNewUser'
             #  }}
 
-            # new_sc_entity = {
+            # new_sc_entity_5 = {
             # "ScEntityName" : "VancouverAirport",
             # "ScEntityContact":{
             #     "Email":"yvrairport@airport.com",
@@ -445,7 +443,7 @@ if __name__ == '__main__':
             # }   
 
 
-            # new_person = {
+            # new_person_6 = {
             # 'EmployeeId': 'Hospitalemployee123',
             # 'FirstName': 'Doctor',
             # 'LastName': 'DOE',
@@ -457,7 +455,7 @@ if __name__ == '__main__':
             #         'Address': 'FirstNewUser'
             #  }}
 
-            # new_sc_entity = {
+            # new_sc_entity_6 = {
             # "ScEntityName" : "YVR Hospital",
             # "ScEntityContact":{
             #     "Email":"yvrairport@airport.com",
@@ -472,9 +470,9 @@ if __name__ == '__main__':
             # "ScEntityIdentificationCodeType" : "HospitalCode"               
             # }   
 
-            new_person = {
-            'EmployeeId': 'IMPORTPICKUPDRIVER123',
-            'FirstName': 'DRiver',
+            new_person_7 = {
+            'EmployeeId': 'NEWIMPORTPDRIVER',
+            'FirstName': 'DRRRRW',
             'LastName': 'DOE',
             'isSuperAdmin' : False,
             'isAdmin' : False,
@@ -484,8 +482,31 @@ if __name__ == '__main__':
                     'Address': 'FirstNewUser'
              }}
 
+            new_sc_entity_7 = {
+            "ScEntityName" : " FEDX",
+            "ScEntityContact":{
+                "Email":"FEDx@FEDx.com",
+                "Address":"345 DEF St, ON, CAN",
+                "Phone": "1234567890"
+            },
+            "isApprovedBySuperAdmin": True,
+            "ScEntityTypeCode": "2",
+            "PersonIds": [],
+            "JoiningRequests" : [],
+            "ScEntityIdentificationCode" : "COOODDO1234",    #<<--------must be checked from a govt. available data source
+            "ScEntityIdentificationCodeType" : "BusinessNumber"               
+            }      
 
-            driver.execute_lambda(lambda executor: register_new_user_with_scentity(executor, new_person, new_sc_entity))
+            driver.execute_lambda(lambda executor: 
+                                                #register_new_user_with_scentity(executor, new_person_1, new_sc_entity_1) and
+                                                #   register_new_user_with_scentity(executor, new_person_2, new_sc_entity_2) and
+                                                #   register_new_user_with_scentity(executor, new_person_3, new_sc_entity_3) and
+                                                #   register_new_user_with_scentity(executor, new_person_4, new_sc_entity_4) and
+                                                #   register_new_user_with_scentity(executor, new_person_5, new_sc_entity_5) and
+                                                #   register_new_user_with_scentity(executor, new_person_6, new_sc_entity_6) 
+                                                #   and
+                                                  register_new_user_with_scentity(executor, new_person_7, new_sc_entity_7)
+                                                  )
     except Exception:
         logger.exception('Error registering new Person and Entities.')
     

@@ -127,6 +127,7 @@ def get_document_ids(transaction_executor, table_name, field, value):
     :return: A list of document IDs.
     """
     query = "SELECT id FROM {} AS t BY id WHERE t.{} = '{}'".format(table_name, field, value)
+    print(query)
     cursor = transaction_executor.execute_statement(query)
     list_of_ids = map(lambda table: table.get('id'), cursor)
     return list_of_ids
@@ -144,10 +145,10 @@ def get_document_ids_from_dml_results(result):
     return ret_val
 
 def get_value_from_documentid(transaction_executor, table_name, document_id, field):
+    # print("SELECT t.{} FROM {} as t BY d_id WHERE d_id = {}".format(field, table_name,document_id))
     if document_exist(transaction_executor,table_name,document_id):
         query = "SELECT t.{} FROM {} as t BY d_id WHERE d_id = ?".format(field, table_name)
         cursor_three = transaction_executor.execute_statement(query, document_id)
-        
         value = list(map(lambda x: x.get(field), cursor_three))
         logger.info("value of {} in {} is : {} ".format(field, document_id, value))
         return value
@@ -200,7 +201,7 @@ def update_document( transaction_executor, table_name,field_name,document_id,new
 
     try:
         next(cursor)
-        logger.info("Updated Successfully!")
+        logger.info("{} in {} of id {} Updated Successfully!".format(field_name, table_name,document_id))
     except StopIteration:
         logger.info("Error updating the document in {}".format(table_name))
  
