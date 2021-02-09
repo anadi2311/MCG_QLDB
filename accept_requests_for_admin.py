@@ -112,8 +112,8 @@ if __name__ == '__main__':
             # request_id_1 = "GZKrCxntHIAHpEnf7q2Os9"
             # request_id_1 = "C1DYYKLFPWoAeG4d9YAKs8"
             # request_id_1 = "8KKV7CtKQHHJ2pGbADpuUz"
-            request_id_1 = "Chnkj9WA0gcJTgNaseH0ny"
-            person_id = "3WF7tW1LGVk7g15sUVOtfk"   
+            request_id_1 = "JOzfQgJwTVXLbg1dfsBUmK"
+            person_id = "8kwcj4xSHdPDfkVhFDGtx1"   
   
             driver.execute_lambda(lambda executor: accept_request_to_approve_company_or_product(executor,request_id_1,person_id)                                                                               )
     except Exception:

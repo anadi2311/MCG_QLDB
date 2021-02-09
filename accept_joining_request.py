@@ -72,8 +72,8 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            requestid = "GjyuFfPptqRGdcvpkB0e5G" 
-            personid = "ElYLFZylZJnBNGPia4VoDv"       
+            requestid = "C1DYYRPu3bqIWFkP10wyrI" 
+            personid = "Jpbn2RJKgqd8OORDcJHMjh"       
   
             driver.execute_lambda(lambda executor: approve_joining_request(executor,requestid,personid))
     except Exception:

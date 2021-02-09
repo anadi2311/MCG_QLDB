@@ -80,6 +80,8 @@ if __name__ == '__main__':
                                                     Constants.PACKING_LIST_INDEX_NAME)
                                         and create_index(x,Constants.CERTIFICATE_OF_ORIGIN_TABLE_NAME,
                                                     Constants.CERTIFICATE_OF_ORIGIN_INDEX_NAME)
+                                        and create_index(x,Constants.PICK_UP_REQUESTS_TABLE,
+                                                    Constants.PICK_UP_REQUESTS_INDEX_NAME)
                                         and create_index(x, Constants.INVOICE_TABLE_NAME,
                                                     Constants.INVOICE_ID_INDEX_NAME),
                                   lambda retry_attempt: logger.info('Retrying due to OCC conflict...'))

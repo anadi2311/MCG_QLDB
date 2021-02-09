@@ -44,7 +44,8 @@ if __name__ == '__main__':
                                    create_table(x,Constants.BILL_OF_LADING_TABLE_NAME) and
                                    create_table(x,Constants.PALLETE_TABLE_NAME) and
                                    create_table(x,Constants.CASES_TABLE_NAME) and
-                                   create_table(x,Constants.PACKING_LIST_TABLE_NAME)and 
+                                   create_table(x,Constants.PACKING_LIST_TABLE_NAME)and
+                                   create_table(x,Constants.PICK_UP_REQUESTS_TABLE) and 
                                    create_table(x,Constants.PRODUCT_TABLE_NAME),
                                    lambda retry_attempt: logger.info('Retrying due to OCC conflict...'))
             logger.info('============== T A B L E S ========= C R E A T E D ==================')

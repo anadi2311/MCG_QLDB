@@ -21,8 +21,8 @@ def get_storage_data(transaction_executor,product_id,data_type):
 
 def threshhold_crossed(transaction_executor, iot_id, iot_data):
     container_id = get_value_from_documentid(transaction_executor,Constants.IOT_TABLE_NAME,iot_id,"ContainerId")
-    purchase_order_id = get_value_from_documentid(transaction_executor, Constants.CONTAINER_TABLE_NAME,container_id[0],"PurchaseOrderId") 
-    product_id = get_value_from_documentid(transaction_executor, Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id[0],"ProductId")
+    purchase_order_id = get_value_from_documentid(transaction_executor, Constants.CONTAINER_TABLE_NAME,container_id[0],"PurchaseOrderIds") 
+    product_id = get_value_from_documentid(transaction_executor, Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id[0][-1],"ProductId")
     print(product_id)
     iot_type = get_value_from_documentid(transaction_executor,Constants.IOT_TABLE_NAME,iot_id,"IoTType")
     if iot_type == [1]:

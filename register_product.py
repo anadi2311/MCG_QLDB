@@ -28,13 +28,14 @@ def product_exist(transaction_executor, ProductCode):
     except:
         return False
 
-def check_minimum_selling_amount(transaction_executor, Product):
-    min_selling_amount = Product["MinimumSellingAmount"]
+def check_products_per_container_and_selling_amount(transaction_executor, Product):
+    products_per_container = Product["ProductsPerContainer"]
     cases_per_container = Constants.PALLETS_PER_CONTAINER * Constants.CASES_PER_PALLETE
-    if min_selling_amount%cases_per_container == 0:
+    minimum_selling_amount = Product["MinimumSellingAmount"]
+    if products_per_container%cases_per_container == 0 and minimum_selling_amount > 0:
         return True
     else:
-        logger.info("Invalind Minimum Selling Amount! Make it multple of : {}".format(cases_per_container))
+        logger.info("Invalind ProductsPerContainer! Make it multple of : {}".format(cases_per_container))
         return False
 
 def register_product(transaction_executor, product,person_id):
@@ -53,7 +54,7 @@ def register_product(transaction_executor, product,person_id):
                 if product_exist(transaction_executor, ProductCode):
                     logger.info(" Product already exists.")
                 else:
-                    if check_minimum_selling_amount(transaction_executor,product):
+                    if check_products_per_container_and_selling_amount(transaction_executor,product):
                         result = insert_documents(transaction_executor, Constants.PRODUCT_TABLE_NAME, [product])
                         product_id = result[0]
                         product_request_id = create_mcg_request(transaction_executor,product_id, person_id,2)
@@ -78,7 +79,8 @@ if __name__ == '__main__':
             'ProductCode': "00123451000015", #GTIN for Vaccine with NDC National Drug Code
             'ProductName': "Moderna Vaccine",
             'ProductPrice': 10,
-            'MinimumSellingAmount':100, #minimum selling amount must be one container <<---- this denoted how many vaccines will be available in a container
+            'MinimumSellingAmount':2, #minimum selling amount in container 
+            'ProductsPerContainer':100, #<<---- It denotes how many vaccines will be available in a container <<-- 100 vaccines per container
             'ProductExpiry': 120, #in days
             'ProductStorage': {
                 'LowThreshTemp': 0, #in degrees Centigrate
@@ -86,13 +88,13 @@ if __name__ == '__main__':
                 'HighThreshHumidity': 40 # percentage   
             },
             'ProductHSTarriffNumber':'HGJSI123123',#Used for catergorizing products in export
-            'ManufacturerId': "3bZ9PrpL1bv1hNfGhfybA2", #change this <<<<---------------------------
+            'ManufacturerId': "JELcNyhcpCkBe7PCXFkgjI", #change this <<<<---------------------------
             'isApprovedBySuperAdmin':False,
             'BatchTableId': ''
             }
 
             # must be passed down as a prop from the react state
-            person_id = "K5ZrbNdSg0Q5G4Ck3igScr"             #change this <<<<---------------------------
+            person_id = "2UMpePTU2NvF1hh3XKJDtd"             #change this <<<<---------------------------
             driver.execute_lambda(lambda executor: register_product(executor, new_product, person_id))
     except Exception:
         logger.exception('Error registering product.')

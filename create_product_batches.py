@@ -92,15 +92,7 @@ def get_tableName_from_tableId(transaction_executor, table_id):
     ret_val = ret_val[0]
     return ret_val
 
-# def BatchNo_exist(transaction_executor,batch_table_name,BatchNo):
-#     statement = 'SELECT * FROM {} AS b WHERE b.BatchNo = ?'.format(batch_table_name)
-#     cursor = transaction_executor.execute_statement(statement,BatchNo)
-#     try:
-#         next(cursor)
-#         return True
-#     except:
-#         logger.info("Batch Number not matched. Adding the new batch info ..")
-#         return False
+
 
 def generate_inventory( transaction_executor,product_id,batch):
 
@@ -117,8 +109,9 @@ def generate_inventory( transaction_executor,product_id,batch):
     batch_num = get_index_number(transaction_executor,batch_table_name,"BatchNo")
     print("batch number is {}".format(batch_num))
     batch['BatchNo'] = batch_num
+    batch['UnitsProduced'] = len(batch["ProductInstances"])
     batch['UnitsRemaining'] = int(batch['UnitsProduced'])
-    print(batch)
+    # print(batch)
     statement = 'INSERT INTO {} ?'.format(batch_table_name)
     cursor =  transaction_executor.execute_statement(statement,convert_object_to_ion(batch))
     
@@ -157,12 +150,12 @@ if __name__ == '__main__':
                 'UnitsProduced':1000, # make this automatic by counting length of product instances
                 'UnitsRemaining':"",
                 'MfgDate':datetime.today().strftime('%Y-%m-%d'),
-                'ProductInstances': list(range(1,1001)), #Create 100 vaccines with SNO from 1 to 100 ==> can be changed with actual Alphanumeric SNo
+                'ProductInstances': list(range(1,101)), #Create 100 vaccines with SNO from 1 to 100 ==> can be changed with actual Alphanumeric SNo
                 'CaseIds':[]
             }
 
-            person_id = "K5ZrbNdSg0Q5G4Ck3igScr"
-            product_id = "60bq1j1hcbq2nAZWKyWAbX"
+            person_id = "2UMpePTU2NvF1hh3XKJDtd"
+            product_id = "BFJKrHD3JBH0VPR609Yvds"
 
             driver.execute_lambda(lambda executor: create_vaccine_batch(executor, person_id,product_id, batch))
     except Exception:

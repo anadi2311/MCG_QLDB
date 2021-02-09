@@ -14,7 +14,7 @@ basicConfig(level=INFO)
 
 
 #createPurchaseOrder(transaction_executor,person_id,PurchaseOrderDetails) <<--------- insert Accepted,invoiceId,ContainerId from outside as variables
-def create_purchase_order (transaction_executor, person_id, purchase_order_details):
+def create_purchase_order_to_manufacturer (transaction_executor, person_id, purchase_order_details):
     
 
     product_id = purchase_order_details["ProductId"]
@@ -26,21 +26,29 @@ def create_purchase_order (transaction_executor, person_id, purchase_order_detai
         if get_document_superadmin_approval_status(transaction_executor,Constants.PRODUCT_TABLE_NAME, product_id):
             #check if the orderQuantity is less than greater than
             if (isinstance(order_quantity,int)): #<<--------------- have to convery orderquantity to float  
-                if order_quantity >= 1:
+                min_selling_amount_containers = get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME,product_id,"MinimumSellingAmount")
+                if order_quantity >= min_selling_amount_containers[0]:
                     scentity_id = get_scentityid_from_personid(transaction_executor,person_id)
                     if scentity_id: 
                         #check if the orderer company is approved
                         if get_document_superadmin_approval_status(transaction_executor,Constants.SCENTITY_TABLE_NAME,scentity_id):
                             purchase_order_number = get_index_number(transaction_executor, Constants.PURCHASE_ORDER_TABLE_NAME,"PurchaseOrderNumber")
                             purchase_order_details.update({"PurchaseOrderNumber": purchase_order_number})
+                            purchase_order_details.update({"OrderType": "1"}) ## order type 1 is by distributor to manufacturer
+                                                                                ## order type 2 is to distributor by downstream entities
                             purchase_order_details['Orderer'].update({'OrdererScEntityId': scentity_id})
                             purchase_order_details['Orderer'].update({'OrdererPersonId': person_id})
                             sc_entity_type_code = get_value_from_documentid(transaction_executor,Constants.SCENTITY_TABLE_NAME,scentity_id,"ScEntityTypeCode")
                             if sc_entity_type_code[0] == "2" :## normal company
                                 highest_packaging_level = "Container"
                             logger.info(purchase_order_details)
+                            
+                            product_id = purchase_order_details["ProductId"]
+                            manufacturer_id = get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME,product_id,"ManufacturerId")
+        
                             ## highest packagin level Id in this case is container since that is the minimum amount that distributor has to order
-                            purchase_order = {**purchase_order_details,"Acceptor":{"isOrderAccepted":False,"AcceptorScEntityId":scentity_id,"ApprovingPersonId":""},"InvoiceId":"","HighestPackagingLevelIds":[],"HighestPackagingLevelType": highest_packaging_level}
+
+                            purchase_order = {**purchase_order_details,"Acceptor":{"isOrderAccepted":False,"AcceptorScEntityId":manufacturer_id[0],"ApprovingPersonId":""},"InvoiceId":"","HighestPackagingLevelIds":[],"HighestPackagingLevelType": highest_packaging_level}
                             purchase_order_id = insert_documents(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,convert_object_to_ion(purchase_order))
 
                             logger.info("Order was placed sucessfully with id: {}".format(purchase_order_id))
@@ -51,7 +59,7 @@ def create_purchase_order (transaction_executor, person_id, purchase_order_detai
                     else:
                         logger.info("check if person id is associated with an entity.")
                 else:
-                    logger.info("Order quantity cannot be zero.")
+                    logger.info("Order quantity cannot be less than minimum quantity.")
             else:
                 logger.info("Order Quantity can only be in the form of integers.")
         else:
@@ -69,22 +77,25 @@ def get_orderer_id(transaction_executor, purchase_order_id):
     return value[0]
 
 if __name__ == '__main__':
-
+    
     try:
         with create_qldb_driver() as driver:
             purchaseorderdetails = {
                 "PurchaseOrderNumber":"",
-                "ProductId":"60bq1j1hcbq2nAZWKyWAbX",
-                "OrderQuantity" : 2, ## <<------- must be in integer and refers to number of containers ordered (In this case total vaccines ordered are 100)
+                "ProductId":"BFJKrHD3JBH0VPR609Yvds",
+                "OrderQuantity" : 2, ## <<------- number of containers orered ## keep this 2 because max transaction limit is 2
                 "Orderer":{
                     "OrdererScEntityId":"",
                     "OrdererPersonId" :""
                 },
                 "isOrderShipped":False,
+                "OrderType":"",
             }
             # must be passed down as a prop from the react state
-            person_id = "8qGdFJhMN4h9M8KnQSI2ku"             #change this <<<<---------------------------
-            driver.execute_lambda(lambda executor: create_purchase_order(executor, person_id,purchaseorderdetails))
+            person_id = "6rq5FLKmPdVJi7fpGk5BEp"             #change this <<<<---------------------------
+            driver.execute_lambda(lambda executor: create_purchase_order_to_manufacturer(executor, person_id,purchaseorderdetails))
     except Exception:
         logger.exception('Error creating order.')
+
+        
 

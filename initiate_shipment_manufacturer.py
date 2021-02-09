@@ -15,7 +15,7 @@ logger = getLogger(__name__)
 basicConfig(level=INFO)
 
 
-def create_case(transaction_executor, product_code, purchase_order_id,product_instances):
+def create_case(transaction_executor, product_code, purchase_order_id,product_instances,products_per_case):
     s_no = get_index_number(transaction_executor,Constants.CASES_TABLE_NAME,"CaseNumber")
     case_number = "1"+str(product_code)+ str(s_no) #<<-----------level 1 denotes case level of product
     logger.info(case_number)
@@ -23,7 +23,8 @@ def create_case(transaction_executor, product_code, purchase_order_id,product_in
         "CaseNumber":case_number,
         "PalleteId" : "",
         "PurchaseOrderId" : purchase_order_id,
-        "ProductInstances":product_instances # this value should come from scanning the GTIN barcode of the products
+        "ProductInstances":product_instances, # this value should come from scanning the GTIN barcode of the products
+        "ProductsPerCase":products_per_case
     }
     case_id = insert_documents(transaction_executor,Constants.CASES_TABLE_NAME,[case])
     return case_id
@@ -69,7 +70,7 @@ def assign_products_into_case(transaction_executor,product_id,batch_table_name,p
                 if batch_inventory_left > 0:
                     case_product_instances = product_instances[(units_produced - batch_inventory_left) : (units_produced +int(products_per_case) - batch_inventory_left)]
                     logger.info(case_product_instances)
-                    case_id = create_case(transaction_executor,product_code[0],purchase_order_id,case_product_instances)
+                    case_id = create_case(transaction_executor,product_code[0],purchase_order_id,case_product_instances,products_per_case)
                     logger.info("--------------------------------Case {} added----------------------------------".format(case))
                     cases.append(case_id[0])
                     batch_inventory_left = batch_inventory_left - products_per_case
@@ -153,7 +154,7 @@ def create_certificate_of_origin(transaction_executor,product_id):
     return certificate_of_origin_id
 
 
-def create_packing_list(transaction_executor, product_quantity,product_code,palleteIds):
+def create_packing_list(transaction_executor, products_per_container,product_code,palleteIds):
         container_case_ids = []
         # print("pallete ids are : {}".format(palleteIds))
         for palleteId in palleteIds:
@@ -167,7 +168,7 @@ def create_packing_list(transaction_executor, product_quantity,product_code,pall
             "NumberofCases":Constants.PALLETS_PER_CONTAINER*Constants.CASES_PER_PALLETE,
             "CasesIds": container_case_ids,
             "ProductCode": product_code[0],
-            "ProductQuantity" : product_quantity[0],
+            "ProductQuantity" : products_per_container,
             "ExportApproval":{
                         "ApproverId":"",
                         "isApprovedByCustoms":False},
@@ -180,7 +181,7 @@ def create_packing_list(transaction_executor, product_quantity,product_code,pall
         packing_list_id = insert_documents(transaction_executor,Constants.PACKING_LIST_TABLE_NAME,packing_list)
         return packing_list_id[0]
 
-def assign_palletes_into_container(transaction_executor,pallete_ids,product_code,purchase_order_id,carrier_company_id,certificate_of_origin_id,product_quantity,transport_type):
+def assign_palletes_into_container(transaction_executor,pallete_ids,product_code,purchase_order_id,carrier_company_id,certificate_of_origin_id,products_per_container,transport_type):
     number_of_containers_required = int(len(pallete_ids)/Constants.PALLETS_PER_CONTAINER)
     starting_pallete_number = 0
     ending_pallete_number = int(Constants.PALLETS_PER_CONTAINER) 
@@ -194,7 +195,7 @@ def assign_palletes_into_container(transaction_executor,pallete_ids,product_code
         s_no = get_index_number(transaction_executor,Constants.CONTAINER_TABLE_NAME,"ContainerNumber")
         container_number = "3"+str(product_code)+ str(s_no) #<<-----------level 3 denotes container level of product
         current_pallete_ids = pallete_ids[starting_pallete_number:ending_pallete_number]
-        packing_list_id = create_packing_list(transaction_executor,product_quantity,product_code,current_pallete_ids)
+        packing_list_id = create_packing_list(transaction_executor,products_per_container,product_code,current_pallete_ids)
 
         '''
         Here we are marking container safe when it is generated. In production we will need another file "mark_contaier_safe"
@@ -203,7 +204,7 @@ def assign_palletes_into_container(transaction_executor,pallete_ids,product_code
 
         container = {
             "ContainerNumber":container_number,
-            "PurchaseOrderId" : purchase_order_id,
+            "PurchaseOrderIds" : purchase_order_id,
             "PalleteIds": current_pallete_ids,
             "ContainerSafety" : {"isContainerSafeForDelivery" : True,
                                  "LastCheckedAt": datetime.datetime.now().timestamp()},
@@ -215,6 +216,7 @@ def assign_palletes_into_container(transaction_executor,pallete_ids,product_code
             "AirwayBillIds": [],
             "BillOfLadingIds" : [],
             "CertificateOfOriginId":certificate_of_origin_id,
+            "isPicked":False,
             "isDelivered":False
         }
         container_id = insert_documents(transaction_executor,Constants.CONTAINER_TABLE_NAME,convert_object_to_ion(container))
@@ -263,6 +265,22 @@ def shipment_already_started(transaction_executor,purchase_order_id):
     else:
         return False
 
+def create_pick_up_request(transaction_executor, requestor_sc_entity_id, carrier_company_id, purchase_order_id,transport_type):
+    request_number = get_index_number(transaction_executor,Constants.PICK_UP_REQUESTS_TABLE,Constants.PICK_UP_REQUESTS_INDEX_NAME)
+    pick_up_location = get_scentity_contact(transaction_executor,requestor_sc_entity_id,"Address")
+    pick_up_request = {
+        "PickUpRequestNumber": request_number,
+        "PickUpLocation":pick_up_location,
+        "RequestorId": requestor_sc_entity_id,
+        "CarrierCompanyId": carrier_company_id,
+        "PurchaseOrderId": purchase_order_id,
+        "isAccepted":False,
+        "TransportType": transport_type
+    }
+
+    pick_up_request_id = insert_documents(transaction_executor,Constants.PICK_UP_REQUESTS_TABLE,pick_up_request)
+    logger.info("pick_up_request was created :{}".format(pick_up_request_id))
+    return pick_up_request_id
 
 def initiate_shipment(transaction_executor, carrier_company_id, transport_type,purchase_order_id,person_id):
     if document_exist(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id):
@@ -270,9 +288,9 @@ def initiate_shipment(transaction_executor, carrier_company_id, transport_type,p
         if get_document_superadmin_approval_status(transaction_executor,Constants.SCENTITY_TABLE_NAME,carrier_company_id):
             product_id = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"ProductId")
             product_id = product_id[0]
-            manufacturer_id = get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME,product_id,"ManufacturerId")
+            required_scentity_id = get_sub_details(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,"Acceptor",purchase_order_id,"AcceptorScEntityId")
             actual_scentity_id = get_scentityid_from_personid(transaction_executor,person_id)
-            if manufacturer_id[0] == actual_scentity_id:
+            if required_scentity_id[0] == actual_scentity_id:
                 logger.info("Authorized!")
                 batch_table_id = batch_table_exist(transaction_executor,product_id)
                 if order_already_accepted(transaction_executor,purchase_order_id):
@@ -281,8 +299,10 @@ def initiate_shipment(transaction_executor, carrier_company_id, transport_type,p
                     else:
                         if batch_table_id:
                             batch_table_name = get_tableName_from_tableId(transaction_executor,batch_table_id)
-                            min_selling_amount = get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME,product_id,"MinimumSellingAmount")
-                            products_per_case = round((min_selling_amount[0])/(Constants.CASES_PER_PALLETE*Constants.PALLETS_PER_CONTAINER))
+                            
+                            products_per_container = get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME,product_id,"ProductsPerContainer")
+                            # min_selling_amount = int(min_selling_amount_containers[0])*int(products_per_container[0])
+                            products_per_case = round((products_per_container[0]/(Constants.CASES_PER_PALLETE*Constants.PALLETS_PER_CONTAINER)))
                             logger.info("products_per_case is : {}".format(products_per_case))
                             product_units_ordered = enough_inventory_registered_for_order(transaction_executor,products_per_case,purchase_order_id,batch_table_name)
                             if product_units_ordered:
@@ -292,11 +312,14 @@ def initiate_shipment(transaction_executor, carrier_company_id, transport_type,p
                                 case_ids = assign_products_into_case(transaction_executor,product_id,batch_table_name,product_units_ordered,products_per_case,purchase_order_id,product_code)
                                 pallete_ids = assign_cases_into_pallete(transaction_executor,case_ids,product_code)
                                 certificate_of_origin_id = create_certificate_of_origin(transaction_executor,product_id)
-                                product_quantity = get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME,product_id,"MinimumSellingAmount")
-                                container_ids = assign_palletes_into_container(transaction_executor,pallete_ids,product_code,purchase_order_id,carrier_company_id,certificate_of_origin_id[0],product_quantity,transport_type)
+                                # product_quantity = get_value_from_documentid(transaction_executor,Constants.PRODUCT_TABLE_NAME,product_id,"MinimumSellingAmount")
+                                container_ids = assign_palletes_into_container(transaction_executor,pallete_ids,product_code,purchase_order_id,carrier_company_id,certificate_of_origin_id[0],products_per_container,transport_type)
                                 update_container_ids_in_purchase_order(transaction_executor,container_ids,purchase_order_id)
-            
+                                
+                                pick_up_request_id = create_pick_up_request(transaction_executor,actual_scentity_id,carrier_company_id, purchase_order_id, transport_type)
+
                                 logger.info("===================== S H I P M E N T ======= I N I T I A T E D =======================")
+                                return pick_up_request_id
                             else:
                                 logger.info(" First produce and register the vaccines into the sytem before shipping them")
                         else: 
@@ -315,9 +338,9 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
             
-            purchaseorderid = "Au1ElllTmwNAh3XlcO7iRl"        
-            personid = "K5ZrbNdSg0Q5G4Ck3igScr"
-            carriercompanyid = "GddsjJbYqiT2xJUMt7urvE"
+            purchaseorderid = "KGDudCYOaRZKLuFqfWrHem"        
+            personid = "2UMpePTU2NvF1hh3XKJDtd"
+            carriercompanyid = "G3Oi4y3k54CEJxFpBYTsY4"
             transporttype = 1, 
             driver.execute_lambda(lambda executor: initiate_shipment(executor, carriercompanyid,transporttype,purchaseorderid, personid))
     except Exception:

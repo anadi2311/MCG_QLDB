@@ -9,14 +9,13 @@ import itertools
 import datetime
 from constants import Constants
 from create_index import create_index
-from create_purchase_order import get_orderer_id
+from create_purchase_order_to_manufacturer import get_orderer_id
 from register_person import get_scentityid_from_personid
 from insert_document import insert_documents
 from sampledata.sample_data import get_value_from_documentid,document_exist,update_document,convert_object_to_ion,get_document_ids
 from check_container_safety import isContainerSafe
 from export_customs_approval import document_already_approved_by_customs
 from create_table import create_table
-# from export_transport_product import create_lorry_reciept, update_document_in_container
 
 
 def inventory_table_already_exist(transaction_executor,scentity_id):
@@ -25,26 +24,19 @@ def inventory_table_already_exist(transaction_executor,scentity_id):
     cursor = transaction_executor.execute_statement(statement)
     
     try:
-        next(cursor)
         logger.info("Inventory table exist!")
-        return True
+        ret_val = list(map(lambda x: x.get('name'), cursor))    
+        print(ret_val)     
+        return ret_val
     except StopIteration:
         logger.info("Table does bot exist")
         return False
 
 
-def get_inventory_table(transaction_executor,scentity_id):
-    inventory_table_name = "INVENTORY"+scentity_id
-    if inventory_table_already_exist(transaction_executor,scentity_id):
-        logger.info("Table found : {}".format(inventory_table_name))
-        return inventory_table_name
-    else:
-        create_table(transaction_executor,inventory_table_name)
-        create_index(transaction_executor,inventory_table_name,"ProductId") #<<----------- this could be the problem
-        return inventory_table_name
     
 def product_exist_in_inventory(transaction_executor,inventory_table_name,product_id):
     statement = "SELECT * FROM {} AS i by id WHERE i.ProductId = ?".format(inventory_table_name)
+    # print(statement)
     cursor = transaction_executor.execute_statement(statement,product_id)
 
     try:
@@ -52,7 +44,7 @@ def product_exist_in_inventory(transaction_executor,inventory_table_name,product
         logger.info("Product exist")
         return True
     except StopIteration:
-        logger.info("New product. Creating a new entry.")
+        logger.info("Product not found")
         return False
 
 def generate_new_product_inventory(transaction_executor,inventory_table_name,product_id,product_instances,case_ids,pallete_ids,container_ids,delivered_product_quantity):
@@ -62,7 +54,9 @@ def generate_new_product_inventory(transaction_executor,inventory_table_name,pro
         "CaseIds":case_ids,
         "PalleteIds":pallete_ids,
         "ContainerIds":container_ids,
-        "CurrentInventory": delivered_product_quantity
+        "CurrentInventory": delivered_product_quantity,
+        "MinimumSellingAmount":"",
+        "ProductPrice":""
     }
 
     inventory_id = insert_documents(transaction_executor,inventory_table_name,convert_object_to_ion(inventory))
@@ -92,7 +86,14 @@ def update_current_product_inventory(transaction_executor,inventory_table_name,p
 
 def update_product_inventory(transaction_executor,scentity_id,product_id,product_instances,case_ids,pallete_ids,container_ids,delivered_product_quantity):
     
-    inventory_table_name = get_inventory_table(transaction_executor,scentity_id)
+    inventory_table_name = inventory_table_already_exist(transaction_executor,scentity_id)
+    if inventory_table_name:
+        pass
+    else:
+        inventory_table_name = "INVENTORY"+scentity_id
+        create_table(transaction_executor,inventory_table_name)
+        create_index(transaction_executor,inventory_table_name,"ProductId") 
+
     if product_exist_in_inventory(transaction_executor,inventory_table_name,product_id):
         update_current_product_inventory(transaction_executor,inventory_table_name,product_id,product_instances,case_ids,pallete_ids,container_ids,delivered_product_quantity)
         logger.info("inventory was updated")
@@ -119,38 +120,50 @@ def approve_order_delivery(transaction_executor,purchase_order_id,person_id):
             delivered_product_instances = []
             delivered_product_quantity = 0
             container_ids = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"HighestPackagingLevelIds")
+            invoice_id = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"InvoiceId")
+            update_document(transaction_executor, Constants.INVOICE_TABLE_NAME, "Approval.isInvoiceApprovedForPayment", invoice_id[0],True)
+            update_document(transaction_executor, Constants.INVOICE_TABLE_NAME, "Approval.ApproverId", invoice_id[0],True)
+
             for container_id in container_ids[0]:
+                
                 certificate_of_origin_id = get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"CertificateOfOriginId")
                 packing_list_id = get_value_from_documentid(transaction_executor, Constants.CONTAINER_TABLE_NAME,container_id,"PackingListId")
                 if isContainerSafe:
-                    import_custom_approved = (document_already_approved_by_customs(transaction_executor,"ImportApproval",Constants.CERTIFICATE_OF_ORIGIN_TABLE_NAME,certificate_of_origin_id[0]) and
-                    document_already_approved_by_customs(transaction_executor,"ImportApproval", Constants.PACKING_LIST_TABLE_NAME,packing_list_id[0]))
 
-                    if import_custom_approved:
-                        update_document(transaction_executor,Constants.CONTAINER_TABLE_NAME,"isDelivered",container_id,True)
-                        lorry_reciepts = get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"LorryRecieptIds")
-                        update_document(transaction_executor,Constants.LORRY_RECEIPT_TABLE_NAME,"isDeliveryDone",lorry_reciepts[0][-1],True)
-                        update_document(transaction_executor,Constants.LORRY_RECEIPT_TABLE_NAME,"DeliveryTime",lorry_reciepts[0][-1],datetime.datetime.now().timestamp())
-                        delivered_container_ids.append(container_id)
-                        
-                        packing_list_id= get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"PackingListId")
-                        pallete_ids = get_value_from_documentid(transaction_executor,Constants.PACKING_LIST_TABLE_NAME,packing_list_id[0],"PalleteIds")
-                        # pallete_ids = oneDArray(pallete_ids)
-                        delivered_pallete_ids.append(pallete_ids[0])
-                        case_ids = get_value_from_documentid(transaction_executor,Constants.PACKING_LIST_TABLE_NAME,packing_list_id[0],"CasesIds")
-                        case_ids = oneDArray(case_ids[0])
-                        
-                        delivered_cases_ids.append(case_ids)
-                        product_quantity = get_value_from_documentid(transaction_executor,Constants.PACKING_LIST_TABLE_NAME,packing_list_id[0],"ProductQuantity")
-                        delivered_product_quantity = delivered_product_quantity + int(product_quantity[0])
+                    is_container_delivered = get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"isDelivered")
+                    if is_container_delivered == [0]:
+              
+                        import_custom_approved = (document_already_approved_by_customs(transaction_executor,"ImportApproval",Constants.CERTIFICATE_OF_ORIGIN_TABLE_NAME,certificate_of_origin_id[0]) and
+                        document_already_approved_by_customs(transaction_executor,"ImportApproval", Constants.PACKING_LIST_TABLE_NAME,packing_list_id[0]))
 
-                        
-                        for case_id in case_ids:
+                        if import_custom_approved:
+                            update_document(transaction_executor,Constants.CONTAINER_TABLE_NAME,"isDelivered",container_id,True)
+                            lorry_reciepts = get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"LorryRecieptIds")
+                            update_document(transaction_executor,Constants.LORRY_RECEIPT_TABLE_NAME,"isDeliveryDone",lorry_reciepts[0][-1],True)
+                            update_document(transaction_executor,Constants.LORRY_RECEIPT_TABLE_NAME,"DeliveryTime",lorry_reciepts[0][-1],datetime.datetime.now().timestamp())
+                            delivered_container_ids.append(container_id)
+                            
+                            packing_list_id= get_value_from_documentid(transaction_executor,Constants.CONTAINER_TABLE_NAME,container_id,"PackingListId")
+                            pallete_ids = get_value_from_documentid(transaction_executor,Constants.PACKING_LIST_TABLE_NAME,packing_list_id[0],"PalleteIds")
+                            # pallete_ids = oneDArray(pallete_ids)
+                            delivered_pallete_ids.append(pallete_ids[0])
+                            case_ids = get_value_from_documentid(transaction_executor,Constants.PACKING_LIST_TABLE_NAME,packing_list_id[0],"CasesIds")
+                            case_ids = oneDArray(case_ids[0])
+                            
+                            delivered_cases_ids.append(case_ids)
+                            product_quantity = get_value_from_documentid(transaction_executor,Constants.PACKING_LIST_TABLE_NAME,packing_list_id[0],"ProductQuantity")
+                            # print(product_quantity[0])
+                            delivered_product_quantity = delivered_product_quantity + int(product_quantity[0][0])
 
-                            product_instances = get_value_from_documentid(transaction_executor,Constants.CASES_TABLE_NAME,case_id,"ProductInstances")
-                            delivered_product_instances.append(product_instances[0])
+                            
+                            for case_id in case_ids:
+
+                                product_instances = get_value_from_documentid(transaction_executor,Constants.CASES_TABLE_NAME,case_id,"ProductInstances")
+                                delivered_product_instances.append(product_instances[0])
+                        else:
+                            raise ValueError("Container Not Approved by Import Customs")
                     else:
-                        raise ValueError("Container Not Approved by Import Customs")
+                        raise Exception("Container Already Delivered")
                 else:
                     logger.info("A L A R M================C O N T A I N E R=======N O T=======S A F E ==========")
             delivered_pallete_ids = reduce(lambda x,y: x+y, delivered_pallete_ids)
@@ -158,9 +171,10 @@ def approve_order_delivery(transaction_executor,purchase_order_id,person_id):
             delivered_product_instances =  oneDArray(delivered_product_instances)
             containers_delivered = len(delivered_container_ids)
             
-            print(containers_delivered)
+          
+            invoice_id = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"InvoiceId")
             if order_quantity[0] == containers_delivered:
-                invoice_id = get_value_from_documentid(transaction_executor,Constants.PURCHASE_ORDER_TABLE_NAME,purchase_order_id,"InvoiceId")
+            
                 update_document(transaction_executor,Constants.INVOICE_TABLE_NAME,"OrderQuantity",invoice_id[0],containers_delivered)
                 logger.info("all containers delivered without damage ")
             elif order_quantity[0] > containers_delivered:
@@ -191,8 +205,8 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
 
-            purchaseorderid = 'Au1ElllTmwNAh3XlcO7iRl'
-            buyerpersonsid = "8qGdFJhMN4h9M8KnQSI2ku"
+            purchaseorderid = '96EioUftVpm38ZeropGKef'
+            buyerpersonsid = "6xA6lh8SJGl4vEEaQS3uAd"
             driver.execute_lambda(lambda executor: approve_order_delivery(executor, purchaseorderid,buyerpersonsid))
     except Exception:
         logger.exception('Error.')  

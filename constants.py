@@ -12,6 +12,7 @@ class Constants:
     
     INVOICE_TABLE_NAME = "Invoices"
     CERTIFICATE_OF_ORIGIN_TABLE_NAME = "CertificateOfOrigins"
+    PICK_UP_REQUESTS_TABLE = "PickUpRequests"
     LORRY_RECEIPT_TABLE_NAME = "LorryReciepts"
     PACKING_LIST_TABLE_NAME = "PackingLists"
     AIRWAY_BILL_TABLE_NAME = "AirwayBills"
@@ -32,7 +33,7 @@ class Constants:
     PURCHASE_ORDER_ID_INDEX_NAME = 'PurchaseOrderNumber'
     INVOICE_ID_INDEX_NAME = "InvoiceNumber"
     CERTIFICATE_OF_ORIGIN_INDEX_NAME = "CertificateOfOriginNumber"
-    LORRY_RECEIPT_INDEX_NAME = "LorryReceiptNumber"
+    LORRY_RECEIPT_INDEX_NAME = "LorryRecieptNumber"
     AIRWAY_BILL_INDEX_NAME = "AirwayBillNumber"
     BILL_OF_LADING_INDEX_NAME = "BillOfLadingNumber"
     CONATINER_INDEX_NAME = "ContainerNumber"
@@ -40,6 +41,7 @@ class Constants:
     CASES_INDEX_NAME = "CaseNumber"
     PALLETE_INDEX_NAME = "PalleteNumber"
     PACKING_LIST_INDEX_NAME = "PackingListNumber"
+    PICK_UP_REQUESTS_INDEX_NAME = "PickUpRequestNumber"
 
 
     PALLETS_PER_CONTAINER = 2

@@ -41,15 +41,11 @@ if __name__ == '__main__':
     try:
         with create_qldb_driver() as driver:
 
-            containerid = '0AdAXocWBM4C8Xhxm9lqLa'
-            custompersonid = 'AohDFP7pbLbEfWhnHBK40X'
+            containerid = 'JZeiTO95m9cHzpzYbvTgQn'
+            custompersonid = 'BlFTzO07Kz44HVQtYKLHnl'
             warehouseid = 'XYTTH'
             driver.execute_lambda(lambda executor: approve_import_customs(executor, containerid,custompersonid,warehouseid))
     except Exception:
         logger.exception('Error.')  
 
     
-
-
-
-## request pickup by the buyer
